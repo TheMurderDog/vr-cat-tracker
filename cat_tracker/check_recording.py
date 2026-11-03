@@ -4,9 +4,9 @@ From the camera core folder:
   python -m cat_tracker.check_recording                    newest session in recordings/
   python -m cat_tracker.check_recording --session 20261022-221944_main --every 15
   python -m cat_tracker.check_recording --image some_photo.jpg
-For a recording it runs every Nth frame of all four cameras, locates her like the live tracker does,
-and saves a sheet of the frames where she was found to cat_tracker/logs/snapshots. Record a session
-with her in the room (the camera core's recorder; the public camera core has no recorder, so use --image) to see how well she is found.
+For a recording it runs every Nth frame of all four cameras, locates it like the live tracker does,
+and saves a sheet of the frames where it was found to cat_tracker/logs/snapshots. Record a session
+with it in the room (the camera core's recorder; the public camera core has no recorder, so use --image) to see how well it is found.
 """
 
 import argparse

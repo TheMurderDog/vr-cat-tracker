@@ -2,7 +2,7 @@
 
 Run by train.bat with the cat tracker's own training environment (cat_tracker/.venv), never
 the camera core's .venv. Only images checked in label.py are used. Images with no box teach it what isn't a cat
-(the bear painting, the couch, laundry), so keep those too. The last sixth of every capture session
+(a painting on the wall, the couch, laundry), so keep those too. The last sixth of every capture session
 (in time, all cameras) is held out for checking, so each session teaches it and each is tested on
 moments it didn't train on.
 
@@ -46,7 +46,7 @@ def build(items, root):
     last = {}
     for ses, img, _ in items:
         last[ses] = max(last.get(ses, 0), moment(img))
-    counts = {"train": [0, 0], "val": [0, 0]}  # images, images with her
+    counts = {"train": [0, 0], "val": [0, 0]}  # images, images with it
     for ses, img, lab in items:
         split = "val" if moment(img) >= last[ses] * 5 / 6 else "train"
         name = f"{ses}_{img.stem}"
@@ -114,10 +114,10 @@ def main():
         print("No checked images yet: capture.bat, then label.bat")
         return 1
     data, counts, sessions = build(items, HERE / "training" / "dataset")
-    print(f"Training on {counts['train'][0]} images ({counts['train'][1]} with her), checking on "
-          f"{counts['val'][0]} ({counts['val'][1]} with her): the last sixth of each of {len(sessions)} sessions")
+    print(f"Training on {counts['train'][0]} images ({counts['train'][1]} with it), checking on "
+          f"{counts['val'][0]} ({counts['val'][1]} with it): the last sixth of each of {len(sessions)} sessions")
     if counts["train"][1] < 50:
-        print("Warning: under 50 training images with her in them; it will learn, but label more for a reliable model")
+        print("Warning: under 50 training images with it in them; it will learn, but label more for a reliable model")
 
     # Ultralytics drops helper downloads (e.g. a small model for its mixed-precision check) in the
     # working folder; keep them inside cat_tracker/training rather than the camera core folder

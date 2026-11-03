@@ -1,8 +1,8 @@
-"""When to warn you about her, and how she's moving.
+"""When to warn you about it, and how it's moving.
 
-Motion follows her speed from the tracked position, so the marker can show a resting or a moving cat.
-Proximity decides the warning: always when she's underfoot, earlier when she (or you) is closing in
-fast, and not at all when she's napping a little way off and neither of you is moving toward the other.
+Motion follows its speed from the tracked position, so the marker can show a resting or a moving cat.
+Proximity decides the warning: always when it's underfoot, earlier when it (or you) is closing in
+fast, and not at all when it's napping a little way off and neither of you is moving toward the other.
 """
 
 import collections
@@ -12,7 +12,7 @@ import numpy as np
 
 
 class Motion:
-    """Her horizontal speed (m/s) and how long she has been still. Speed is how far she got over the
+    """Its horizontal speed (m/s) and how long it has been still. Speed is how far it got over the
     last speed_window_s, so the few-cm jitter of a sleeping cat's position doesn't read as moving."""
 
     def __init__(self, oc):
@@ -25,7 +25,7 @@ class Motion:
         self.flip_since = None
 
     def update(self, pos, now):
-        """pos: her filtered position (camera space, metres) at a detection, or None when she isn't seen."""
+        """pos: its filtered position (camera space, metres) at a detection, or None when it isn't seen."""
         if pos is None:
             self.hist.clear()
             self.speed, self.still_since = 0.0, None
@@ -65,11 +65,11 @@ class Motion:
 
 
 class Heading:
-    """Which way she's going on the floor, from her movement: degrees clockwise seen from above, 0 facing
-    -z (the same as osc.room_head). It compares where she was at the start of the last window_s with
-    where she is now, each the average of a few detections so jitter cancels out, and only turns once
-    she has covered min_move_m; then it eases toward the new direction (smooth_s) instead of snapping.
-    Separate from Motion's moving state, so a slow walk turns it too. When she stops it keeps her last
+    """Which way it's going on the floor, from its movement: degrees clockwise seen from above, 0 facing
+    -z (the same as osc.room_head). It compares where it was at the start of the last window_s with
+    where it is now, each the average of a few detections so jitter cancels out, and only turns once
+    it has covered min_move_m; then it eases toward the new direction (smooth_s) instead of snapping.
+    Separate from Motion's moving state, so a slow walk turns it too. When it stops it keeps its last
     heading."""
 
     def __init__(self, oc):
@@ -81,7 +81,7 @@ class Heading:
         self.t = None
 
     def update(self, pos, now, gone=False):
-        """pos: her position at this detection while she's seen, else None; gone: she's hidden for good
+        """pos: its position at this detection while it's seen, else None; gone: it's hidden for good
         (the next sighting starts a fresh heading)."""
         if gone:
             self.hist.clear()
@@ -115,7 +115,7 @@ class Heading:
 
 
 class Smoother:
-    """Eases the shown position toward her newest detection at every update (30 a second), so her
+    """Eases the shown position toward its newest detection at every update (30 a second), so it
     marker and the snake glide between detections instead of stepping. A big jump is taken at once."""
 
     def __init__(self, tau_s=0.15, jump_m=1.0):
@@ -154,10 +154,10 @@ class Proximity:
         self.closing, self.sample = 0.0, None
 
     def update(self, dist, cat_speed, now):
-        """dist: horizontal distance from your headset to her (m); cat_speed from Motion."""
+        """dist: horizontal distance from your headset to it (m); cat_speed from Motion."""
         if self.sample is None:
             self.sample = (now, dist)
-        elif now - self.sample[0] >= 0.2:  # her position steps at the detection rate, so measure over a little while
+        elif now - self.sample[0] >= 0.2:  # its position steps at the detection rate, so measure over a little while
             t0, d0 = self.sample
             rate = (d0 - dist) / (now - t0)  # positive while the gap shrinks, whoever is moving
             self.closing += (now - t0) / (self.smooth + now - t0) * (rate - self.closing)

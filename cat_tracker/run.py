@@ -1,12 +1,12 @@
 """Cat tracker: cameras -> cat boxes -> 3D position -> SteamVR overlay at the real cat, and an arrow
-at the edge of your view pointing to her when she's close.
+at the edge of your view pointing to it when it's close.
 
 Run from the camera core folder (SteamVR up your usual way):  python -m cat_tracker.run
   --reuse-anchor  skip the walk-around and use the last saved anchor (cat_tracker/data/anchor.json)
-  --no-vr         detect and show her on the desktop only (no SteamVR needed)
+  --no-vr         detect and show it on the desktop only (no SteamVR needed)
   --capture       save frames for training from the start (also c in the window); see label.py
   --seconds N     stop after N seconds
-  --osc           also send her position to VRChat for the avatar's cat prop (see osc.py)
+  --osc           also send its position to VRChat for the avatar's cat prop (see osc.py)
   --headless      no window (how SteamVR starts it, see install_autostart.py); needs a saved anchor,
                   and closes when SteamVR does
 In the window: q quits, a re-runs the anchor, s saves a snapshot, c starts/stops capturing. Uses the cameras itself, so other camera programs
@@ -123,7 +123,7 @@ def main():
     ap.add_argument("--no-vr", action="store_true")
     ap.add_argument("--seconds", type=float, default=0)
     ap.add_argument("--capture", action="store_true")
-    ap.add_argument("--osc", action="store_true", help="send her position to VRChat over OSC")
+    ap.add_argument("--osc", action="store_true", help="send its position to VRChat over OSC")
     ap.add_argument("--headless", action="store_true", help="no window; needs a saved anchor")
     args = ap.parse_args()
     cfg = settings.load(args.config, args.cat_config)
@@ -139,8 +139,8 @@ def main():
 
     baseline.prepare_onnxruntime(get(cfg, "onnxruntime", {}) or {})
     dev = int(get(cfg, "gpu.device_id", 0))
-    # the model reports weak boxes too; only confident ones (detector.score) find her on their own,
-    # weak ones count where she is expected (another camera's sighting, or where she just was)
+    # the model reports weak boxes too; only confident ones (detector.score) find it on their own,
+    # weak ones count where it is expected (another camera's sighting, or where it just was)
     strong = float(dc.get("score", 0.2))
     det = CatDetector({**dc, "score": min(strong, float(dc.get("weak_score", 0.08)))}, resolve_path(dc["model"]), [("CUDAExecutionProvider", {"device_id": dev}), "CPUExecutionProvider"])
     log.info("Cat model loaded: %s", dc["model"])
@@ -182,7 +182,7 @@ def main():
     def do_anchor():
         T = anc.run(cfg, cams, rig, vr, log, show_anchor)
         if T is None:
-            log.error("No anchor: her marker can't be placed in SteamVR until one succeeds (press a to retry)")
+            log.error("No anchor: its marker can't be placed in SteamVR until one succeeds (press a to retry)")
         return T
 
     hc_ = cc.get("health", {}) or {}
@@ -225,14 +225,14 @@ def main():
     icons = {k: resolve_path(oc[k]) for k in ("icon", "icon_close", "icon_rest", "icon_move") if oc.get(k)}
     osc = OscCat(cc.get("vrchat", {}) or {}) if args.osc and vr is not None else None
     if args.osc and vr is None:
-        log.warning("--osc needs SteamVR (her offset is measured from your headset); not sending")
+        log.warning("--osc needs SteamVR (its offset is measured from your headset); not sending")
     stream = None
     if osc is not None:
         send_hz = float((cc.get("vrchat", {}) or {}).get("send_hz", 60))
         stream = OscStream(osc, vr, send_hz, log)
-        log.info("Sending her position to VRChat over OSC at %s:%d, %g a second", *osc.addr, send_hz)
+        log.info("Sending its position to VRChat over OSC at %s:%d, %g a second", *osc.addr, send_hz)
     floor_y = float(lc.get("floor_y_m", 0.0))
-    # detections per second: the full rate only while she's moving or close to you; she's mostly asleep
+    # detections per second: the full rate only while it's moving or close to you; it's mostly asleep
     # or out of the room, and then a slower rate is plenty (and saves the GPU)
     fast_period = 1.0 / float(dc.get("rate_hz", 8))
     idle_period = 1.0 / float(dc.get("idle_rate_hz", 3))
@@ -282,7 +282,7 @@ def main():
             tick = time.perf_counter()
             heartbeat.beat()
             # detection runs at detector.rate_hz (a few times a second is plenty for a cat); the overlays,
-            # edge arrow and OSC offset follow your head at overlay.update_hz using her last position
+            # edge arrow and OSC offset follow your head at overlay.update_hz using its last position
             fresh = time.monotonic() - last_det >= det_period
             if fresh:
                 items = [c.latest(rotated=False) for c in cams]
@@ -309,7 +309,7 @@ def main():
                     log.exception("Detection failed")
                     health.detector_failed(time.monotonic())
                     boxes_all = [np.zeros((0, 5)) for _ in items]
-                for i in stale:  # an old picture says nothing about where she is now
+                for i in stale:  # an old picture says nothing about where it is now
                     boxes_all[i] = boxes_all[i][:0]
                 stats["det_ms"].append(1000 * (time.perf_counter() - td))
                 X, used, how, picked = locate(rig, [b[b[:, 4] >= strong] for b in boxes_all], lc, bounds)
@@ -338,7 +338,7 @@ def main():
                     hard(items, picked_strong, picked, X, how_strong, rig, room, intrinsics, bounds, now)
                 if state == "seen":
                     motion.update(pos, now)
-                elif state == "hidden":  # a brief "last seen" doesn't restart her sleep timer; gone for good does
+                elif state == "hidden":  # a brief "last seen" doesn't restart its sleep timer; gone for good does
                     motion.update(None, now)
                 heading.update(pos if state == "seen" else None, now, gone=state == "hidden")
                 if check is not None:
@@ -381,7 +381,7 @@ def main():
                     vr.set_image("icon", icons.get({"close": "icon_close", "rest": "icon_rest", "move": "icon_move"}.get(kind, "icon"), icons["icon"]))
                     vr.place("icon", billboard(p + np.array([0, float(oc.get("icon_lift_m", 0.3)), 0]), hmd_st), alpha)
                     vr.place("ring", flat(ring), alpha)
-                    if close:  # her direction as seen from the headset, so the arrow points at her
+                    if close:  # its direction as seen from the headset, so the arrow points at it
                         d = np.linalg.inv(M @ hmd) @ np.append(p, 1.0)
                         vr.place_on_head("edge", edge_pose(d[:3], float(al.get("edge_angle_deg", 32)),
                                                            float(al.get("distance_m", 1.0))), float(al.get("alpha", 0.9)))
@@ -460,7 +460,7 @@ def main():
 
             if now - last_log > 5:
                 n = max(stats["n"], 1)
-                log.info("%.0f detections/s, detector %.1f ms | cameras seeing her %.1f/4 | shown %.0f%% of the time | found by %s",
+                log.info("%.0f detections/s, detector %.1f ms | cameras seeing it %.1f/4 | shown %.0f%% of the time | found by %s",
                          n / (now - last_log), np.mean(stats["det_ms"]), np.mean(stats["views"]), 100 * stats["seen"] / n,
                          stats["how"] or "")
                 log.info("  colours: %s", colour_report(items, names))

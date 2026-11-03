@@ -89,7 +89,7 @@ def main():
                 break
             if spot is not None:
                 x, z, yaw = spot
-                cat_cam = np.array([x, floor_y + 0.15, z])  # her middle, as the tracker reports it
+                cat_cam = np.array([x, floor_y + 0.15, z])  # its middle, as the tracker reports it
                 stream.set_cat(cat_cam, True, "normal", False, raw_to_cam, yaw)
                 M = vr.raw_to_standing()
                 to_standing = M @ cam_to_raw

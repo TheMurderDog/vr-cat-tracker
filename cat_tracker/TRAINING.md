@@ -4,8 +4,8 @@
 cats seen from the side, not curled-up cats seen from the ceiling. It has never seen your cat, your room, your
 lighting or your furniture.
 
-How much training helps: with the stock model, about 1 camera in 4 saw her, and her position flickered.
-After one round of training on about 15 minutes of footage, all 4 cameras saw her almost all the time and
+How much training helps: with the stock model, about 1 camera in 4 saw it, and its position flickered.
+After one round of training on about 15 minutes of footage, all 4 cameras saw it almost all the time and
 every position was triangulated. Each later round fixed a specific weak spot, such as the couch.
 
 The loop is: **capture → autolabel → label → train → test**, then repeat for anything it still misses. The first
@@ -28,12 +28,12 @@ session in `cat_tracker\captures\`. While the tracker runs, `c` also starts and 
 
 What to capture, roughly in order of value:
 
-- **Her lying down and sleeping**, in all her usual spots. This is what stock models miss most.
-- **Her walking and running** across the room.
-- **Every spot she uses**: couch, bed, under the desk, the floor near where you stand to play.
+- **The cat lying down and sleeping**, in all its usual spots. This is what stock models miss most.
+- **The cat walking and running** across the room.
+- **Every spot it uses**: couch, bed, under the desk, the floor near where you stand to play.
 - **Different lighting**: day, night, with your usual VR lighting.
-- **The room without her** (a few minutes is enough). These frames teach it what *isn't* a cat. Include anything
-  it has mistaken for her: pictures, plush toys, bags, the headset lying on the floor, laundry.
+- **The room without the cat** (a few minutes is enough). These frames teach it what *isn't* a cat. Include anything
+  it has mistaken for the cat: pictures, plush toys, bags, the headset lying on the floor, laundry.
 
 10 to 20 minutes is a good first session. Later, short sessions aimed at one weak spot do more than long general ones.
 
@@ -41,15 +41,15 @@ What to capture, roughly in order of value:
 
 Run `autolabel.bat` before labelling. It fills in boxes the model missed, in two ways:
 
-- **From other cameras:** where any camera found her, it works out where she is in 3D and draws her outline into
-  the cameras that missed her.
-- **From nearby moments:** if she was found before and after a gap, within 8 seconds and 30 cm, she didn't move,
-  so it fills the gap. If she moved further, it leaves those frames alone.
+- **From other cameras:** where any camera found it, it works out where it is in 3D and draws its outline into
+  the cameras that missed it.
+- **From nearby moments:** if it was found before and after a gap, within 8 seconds and 30 cm, it didn't move,
+  so it fills the gap. If it moved further, it leaves those frames alone.
 
-Added boxes show **orange** in `label.bat`, so you check every one. The projection can't tell when she's hidden
+Added boxes show **orange** in `label.bat`, so you check every one. The projection can't tell when it's hidden
 behind furniture, so delete those.
 
-**Skip autolabel for a session where the model boxed something that isn't her**, like a headset on the floor. It
+**Skip autolabel for a session where the model boxed something that isn't the cat**, like a headset on the floor. It
 would copy that mistake into every camera. Fix that session by hand instead.
 
 ## 3. Label
@@ -59,12 +59,12 @@ You can stop at any time (`q`) and carry on later.
 
 | Input | What it does |
 | --- | --- |
-| Left-drag | draw a box around her |
+| Left-drag | draw a box around it |
 | Right-click in a box | delete that box |
 | `z` | undo your last box or deletion |
 | Space or Enter | the boxes are right: save, next image |
 | `x` | no cat in this image: clear the boxes, next image |
-| `r` | reuse the **blue** box (your box from this camera's previous image) and go on. One key per image while she sits still |
+| `r` | reuse the **blue** box (your box from this camera's previous image) and go on. One key per image while it sits still |
 | Backspace | back one image |
 | `j` | skip ahead 10 (skipped images stay unchecked and aren't used) |
 | `q` or Esc | save and quit |
@@ -73,14 +73,14 @@ Colours: green boxes came from the model, orange from autolabel, blue is your pr
 
 Tips for good labels:
 
-- **Snug boxes around her whole body**, tail included when you can see it. Be consistent.
-- **If she's fully hidden, no box.** If she's partly visible, box the part you can see.
+- **Snug boxes around its whole body**, tail included when you can see it. Be consistent.
+- **If it's fully hidden, no box.** If it's partly visible, box the part you can see.
 - **Check the empty frames too.** Pressing `x` or deleting a wrong box and pressing Space is a useful label: it
-  teaches the model that this isn't a cat. Our best model had about 2900 images with her and 1300 without.
+  teaches the model that this isn't a cat. Our best model had about 2900 images with it and 1300 without.
 - **Be careful with `r` near a false detection.** It copies the whole previous box.
 - Only images you pass with Space, Enter, `x` or `r` count. The bottom line shows how many you've checked.
 
-A few hundred checked images with her in them is enough for a big first improvement. Under 50 and it warns you.
+A few hundred checked images with it in them is enough for a big first improvement. Under 50 and it warns you.
 
 ## 4. Train
 
@@ -92,7 +92,7 @@ A few hundred checked images with her in them is enough for a big first improvem
 
 Keep the PC awake while it trains. At the end it:
 
-- prints **precision** (how many of its boxes were really her) and **recall** (how many of her it found) on held-out
+- prints **precision** (how many of its boxes were really the cat) and **recall** (how often it found the cat) on held-out
   images: the last sixth of every session, which it didn't train on.
 - saves `models\cat_finetuned.onnx` and `models\cat_finetuned_half.onnx` (the one the tracker uses, about half
   the GPU work).
@@ -107,17 +107,17 @@ file, so no change is needed after that.
 
 ## 5. Test
 
-Run `desktop_test.bat` with her in the room. First check that the console says
+Run `desktop_test.bat` with it in the room. First check that the console says
 `Cat model loaded: cat_tracker/models/cat_finetuned_half.onnx`. That line is the only way to be sure which model
-is running. Then look at how many cameras box her, and whether the position holds steady when she sits still.
+is running. Then look at how many cameras box it, and whether the position holds steady when it sits still.
 
 ## 6. Keep improving
 
 - **Hard frames are collected for you.** While the tracker runs, it saves moments where two or more cameras are
-  sure of her but another camera that should see her missed. They go into `captures\<date>-<time>-hard`, at most
+  sure of it but another camera that should see it missed. They go into `captures\<date>-<time>-hard`, at most
   150 moments per run, and only with 10 GB free. Their missing boxes are already filled in (orange), so skip
   autolabel and go straight to `label.bat`, then `train_more.bat`.
-- **Aim at weak spots.** If it misses her on the couch, capture two minutes of her on the couch, label, `train_more`.
+- **Aim at weak spots.** If it misses the cat on the couch, capture two minutes of the cat there, label, `train_more`.
 - **False alarms?** Capture the empty room with whatever fooled it in view, label those frames as empty, `train_more`.
 - Every few rounds, when you have a lot of images, do a `train_big.bat` run.
 

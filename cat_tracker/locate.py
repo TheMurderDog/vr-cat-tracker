@@ -1,8 +1,8 @@
 """From per-camera cat boxes to one 3D position in calibration (camera) space, and keeping it steady.
 
 Two or more cameras: the box centres are triangulated with the camera core's Rig, which drops a view that
-disagrees (usually a false hit). One camera: she is almost always on the floor, so the ray through
-the bottom middle of her box is met with the floor plane. Anything outside the room or higher than
+disagrees (usually a false hit). One camera: it is almost always on the floor, so the ray through
+the bottom middle of its box is met with the floor plane. Anything outside the room or higher than
 furniture (pictures on the walls) is thrown out first.
 """
 
@@ -65,7 +65,7 @@ def locate(rig, boxes_all, lc, bounds):
         return None, 0, None, picked
     c = max(seen, key=lambda k: picked[k][4])
     X = _foot(rig, c, picked[c], floor_y)
-    # the bottom of her box is her near edge; her middle is a little further from the camera
+    # the bottom of its box is it near edge; its middle is a little further from the camera
     P = rig.P[c]
     away = X - (-P[:, :3].T @ P[:, 3])
     away[1] = 0.0
@@ -99,8 +99,8 @@ def iou(a, b):
 
 
 def weak_matches(room, intrinsics, boxes_all, picked, X, lc, w, h):
-    """For each camera with no confident box: its weak box (if any) overlapping her outline as
-    projected from position X, else None. Lets a camera that half-sees her help instead of flicker."""
+    """For each camera with no confident box: its weak box (if any) overlapping its outline as
+    projected from position X, else None. Lets a camera that half-sees its help instead of flicker."""
     out = [None] * len(boxes_all)
     radius, half_h = float(lc.get("outline_radius_m", 0.22)), float(lc.get("outline_half_height_m", 0.15))
     for c, boxes in enumerate(boxes_all):

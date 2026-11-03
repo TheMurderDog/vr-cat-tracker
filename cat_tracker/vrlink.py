@@ -3,7 +3,7 @@
 Why raw space: play space tools (OVR Advanced Settings and the like) move SteamVR's standing space
 around the real room, but raw tracking space stays fixed to the base stations, like the cameras.
 The cat's position is kept in raw space and converted to the current standing space every update,
-so dragging or turning the play space never moves her marker away from the real cat.
+so dragging or turning the play space never moves its marker away from the real cat.
 SteamVR must already be running; this attaches to it as an overlay app and never launches it.
 """
 
@@ -200,11 +200,11 @@ def flat(pos):
 
 
 def edge_pose(d_head, angle_deg, distance_m):
-    """Head-relative pose for an arrow at the edge of view, pointing toward d_head (her direction in the
+    """Head-relative pose for an arrow at the edge of view, pointing toward d_head (its direction in the
     headset's frame: +x right, +y up, -z ahead). The arrow image points right (+x) before turning."""
     u = np.array([d_head[0], d_head[1]], float)
     n = np.linalg.norm(u)
-    u = u / n if n > 1e-6 else np.array([0.0, -1.0])  # straight ahead or behind: point down, where she'd be
+    u = u / n if n > 1e-6 else np.array([0.0, -1.0])  # straight ahead or behind: point down, where it would be
     a = math.radians(angle_deg)
     pos = distance_m * np.array([math.sin(a) * u[0], math.sin(a) * u[1], -math.cos(a)])
     z = -pos / np.linalg.norm(pos)  # face the eyes

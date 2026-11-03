@@ -66,7 +66,7 @@ class CatDetector:
 
 
 def draw(img, boxes, best=None, color=(0, 200, 255)):
-    """Boxes on an image: the one used for her position thick, others thin."""
+    """Boxes on an image: the one used for its position thick, others thin."""
     for i, b in enumerate(boxes):
         x1, y1, x2, y2 = (int(v) for v in b[:4])
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 3 if i == best else 1, cv2.LINE_AA)

@@ -1,11 +1,11 @@
 """Saves the moments the detector struggled with, for the next training round, while the tracker runs.
 
-A moment is only saved when she is *sure* from other angles (two or more cameras confidently agree
-on her position) and at least one camera that should see her didn't, or only weakly did. So nothing
-is saved while she's out of the room, and every saved moment is one the model got partly wrong.
+A moment is only saved when it is *sure* from other angles (two or more cameras confidently agree
+on its position) and at least one camera that should see it didn't, or only weakly did. So nothing
+is saved while it's out of the room, and every saved moment is one the model got partly wrong.
 Each tracker run gets one session folder in cat_tracker/captures (<date>-<time>-hard), made only once
 the first moment is saved, in the same layout as capture.bat, so label.bat and train.bat take it as is.
-The boxes added for the cameras that missed her are marked in auto.json, so label.bat shows them in
+The boxes added for the cameras that missed its are marked in auto.json, so label.bat shows them in
 orange for you to check. A run stops saving after max_moments, or when the disk gets low.
 """
 
@@ -44,11 +44,11 @@ class HardSaver:
 
     def __call__(self, items, strong_picked, final_picked, X, how_strong, rig, room, intrinsics, bounds, now):
         """strong_picked: the confident box used per camera (or None), from the first locate;
-        final_picked: after weak boxes were added; X: her position this detection."""
+        final_picked: after weak boxes were added; X: its position this detection."""
         if not self.on or X is None or now - self.last < self.every:
             return
         if how_strong != "triangulated" or sum(b is not None for b in strong_picked) < self.min_strong:
-            return  # not sure enough from the other angles to know she's really there
+            return  # not sure enough from the other angles to know it's really there
         h, w = items[0][0].shape[:2]
         rows_all, kinds = [], {}
         for c, it in enumerate(items):
@@ -59,7 +59,7 @@ class HardSaver:
                 guess = outline_box(room["cameras"][c], intrinsics[c], X, self.radius, self.half_h, w, h)
                 if guess is None:
                     rows_all.append([])
-                    continue  # she's out of this camera's view: nothing missed
+                    continue  # it's out of this camera's view: nothing missed
                 if final_picked[c] is not None:
                     rows.append(final_picked[c])
                     kinds[c] = "unsure"
@@ -68,7 +68,7 @@ class HardSaver:
                     kinds[c] = "cross"
             rows_all.append([b for b in rows if _inside(_foot(rig, c, b, self.floor_y), bounds)])
         if not kinds:
-            return  # every camera that could see her did, confidently
+            return  # every camera that could see it did, confidently
         if self.dir is None:
             self._start()
         if shutil.disk_usage(self.dir).free / 1e9 < self.min_free:

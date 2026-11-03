@@ -1,11 +1,11 @@
 """Fill in the labels the stock model missed in a capture session, using the other cameras and time.
 
-1. Each moment, her 3D position comes from whichever cameras did find her (triangulated, or one
+1. Each moment, its 3D position comes from whichever cameras did find it (triangulated, or one
    camera's box projected onto the floor), as in the live tracker.
-2. A moment where no camera found her gets a position if the sightings just before and after it
-   are close together in time (max_gap_s) and place (still_m): she lay still and the detector
-   flickered. If she moved further than that between sightings, those moments are left alone.
-3. Every camera that should see her at that position but has no box gets one: her outline (a
+2. A moment where no camera found it gets a position if the sightings just before and after it
+   are close together in time (max_gap_s) and place (still_m): it lay still and the detector
+   flickered. If it moved further than that between sightings, those moments are left alone.
+3. Every camera that should see it at that position but has no box gets one: its outline (a
    short cylinder about cat size) projected into that camera. Where the stock model has a weak
    guess (above refine_score) overlapping that outline, its tighter box is used instead.
 Images already checked in label.bat are never changed. Added boxes are listed in auto.json and
@@ -70,7 +70,7 @@ def main():
     if first is not None:
         h, w = cv2.imread(str(first)).shape[:2]
 
-    # 1. where she is each moment, from the boxes there are (checked ones count fully)
+    # 1. where it is each moment, from the boxes there are (checked ones count fully)
     boxes = {}
     pos = {}
     for n in moments:
@@ -94,13 +94,13 @@ def main():
             continue
         Xa, Xb = pos[a][0], pos[b][0]
         if np.linalg.norm((Xa - Xb)[[0, 2]]) > still_m:
-            continue  # she moved: the moments in between can't be placed
+            continue  # it moved: the moments in between can't be placed
         for n in moments:
             if a < n < b and n not in pos:
                 pos[n] = ((Xa + Xb) / 2, "filled")
                 filled += 1
 
-    # 3. a box in every camera that should see her and has none
+    # 3. a box in every camera that should see it and has none
     det = None
     refine = float(ac.get("refine_score", 0.05))
     if refine > 0:
@@ -134,12 +134,12 @@ def main():
                 auto[stem] = kind
     if not args.dry_run:
         auto_file.write_text(json.dumps(auto, indent=1), encoding="utf-8")
-    print(f"Session {ses.name}: {len(moments)} moments, she was found in {len(seen)} and placed in {filled} more "
+    print(f"Session {ses.name}: {len(moments)} moments, it was found in {len(seen)} and placed in {filled} more "
           f"between sightings in the same spot")
     print(f"{'Would add' if args.dry_run else 'Added'} {added['cross']} boxes from other cameras and {added['filled']} "
           f"from nearby moments ({added['refined']} tightened by the model's weak guesses)")
     if not args.dry_run:
-        print("They show in orange in label.bat: delete any where she is hidden (behind the couch, under the desk)")
+        print("They show in orange in label.bat: delete any where it is hidden (behind the couch, under the desk)")
     return 0
 
 

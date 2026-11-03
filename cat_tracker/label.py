@@ -2,10 +2,10 @@
 
 From the camera core folder:  python -m cat_tracker.label                 every session with unchecked images, newest first
                       python -m cat_tracker.label --session 20261030-201500
-Mouse: drag to draw a box around her, right-click a box to delete it.
+Mouse: drag to draw a box around it, right-click a box to delete it.
 Keys:  space or enter = keep and go to the next image, backspace = back one, z = undo the last box
        you drew or deleted, r = use the previous image's boxes instead (shown blue: the same camera's
-       image just before, if you checked it; for when she hasn't moved) and go to the next image,
+       image just before, if you checked it; for when it hasn't moved) and go to the next image,
        x = no cat in this image (clears the boxes) and next, j = skip ahead 10, q = save and quit.
 Every image you move past counts as checked (listed in checked.txt), so you can stop and come back.
 Only checked images are used for training. Boxes added by autolabel.bat are orange until you move on.
@@ -107,7 +107,7 @@ def label_session(ses, start=None):
         state["undo"] = []
         kind = auto.get(images[i].stem) if images[i].stem not in checked else None
         first = [list(b) for b in state["boxes"]]
-        # the same camera's previous image, if it was checked: she often hasn't moved
+        # the same camera's previous image, if it was checked: it often hasn't moved
         prev = []
         if i > 0 and images[i - 1].stem.rsplit("_", 1)[0] == images[i].stem.rsplit("_", 1)[0] \
                 and images[i - 1].stem in checked:
@@ -120,7 +120,7 @@ def label_session(ses, start=None):
             if kind is not None:
                 cv2.putText(view, "auto box: " + {"cross": "from another camera", "filled": "from nearby moments",
                                                  "unsure": "the model was unsure here"}.get(kind, kind)
-                            + " - is she really visible here?", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2, cv2.LINE_AA)
+                            + " - is it really visible here?", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2, cv2.LINE_AA)
             for b in prev:
                 cv2.rectangle(view, (int(b[0]) - 3, int(b[1]) - 3), (int(b[2]) + 3, int(b[3]) + 3), (255, 80, 0), 3, cv2.LINE_AA)
             hint = ("r = reuse the blue box from the previous frame" if prev else
