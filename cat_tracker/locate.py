@@ -65,7 +65,7 @@ def locate(rig, boxes_all, lc, bounds):
         return None, 0, None, picked
     c = max(seen, key=lambda k: picked[k][4])
     X = _foot(rig, c, picked[c], floor_y)
-    # the bottom of its box is it near edge; its middle is a little further from the camera
+    # the bottom of its box is its near edge; its middle is a little further from the camera
     P = rig.P[c]
     away = X - (-P[:, :3].T @ P[:, 3])
     away[1] = 0.0
