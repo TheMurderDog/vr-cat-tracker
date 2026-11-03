@@ -1,0 +1,21 @@
+{
+  "action_manifest_version": 0,
+  "controller_type": "knuckles",
+  "name": "Cat tracker",
+  "description": "Both controllers buzz when the cat is underfoot",
+  "bindings": {
+    "/actions/cat": {
+      "haptics": [
+        {
+          "output": "/actions/cat/out/buzz",
+          "path": "/user/hand/left/output/haptic"
+        },
+        {
+          "output": "/actions/cat/out/buzz",
+          "path": "/user/hand/right/output/haptic"
+        }
+      ],
+      "sources": []
+    }
+  }
+}

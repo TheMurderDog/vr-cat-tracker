@@ -1,0 +1,11 @@
+# kept out of git: big or per-machine
+.venv/
+captures/
+training/
+logs/
+data/
+__pycache__/
+*.pyc
+# model weights: download/export the stock one yourself, train your own (see models/README.md)
+models/*.onnx
+models/*.pt

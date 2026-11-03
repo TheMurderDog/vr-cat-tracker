@@ -1,0 +1,7 @@
+# Camera core: capture, calibration, triangulation, filters. Python 3.12, 64-bit.
+# Versions checked against PyPI in October 2026. Licenses in NOTICE.md.
+opencv-python==5.0.0.93     # OpenCV 5: the fisheye calibration code uses its cv2.CALIB_* flag names
+numpy==2.5.3
+scipy==1.18.1
+PyYAML==6.0.3
+openvr==2.12.1401           # pyopenvr: SteamVR tracker poses for the room calibration (SteamVR must be installed)

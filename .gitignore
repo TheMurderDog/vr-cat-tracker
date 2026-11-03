@@ -1,0 +1,6 @@
+# per-machine: never commit calibration results, captured frames, logs or the environment
+.venv/
+__pycache__/
+*.pyc
+logs/
+calibration/data/

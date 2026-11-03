@@ -1,0 +1,5 @@
+ultralytics==8.4.193
+onnx
+onnxslim
+onnxruntime-gpu
+onnxconverter-common

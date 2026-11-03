@@ -1,0 +1,107 @@
+# Every setting for the camera core. Nothing tunable is hard-coded.
+# Paths are relative to this folder unless absolute.
+
+logging:
+  dir: logs
+  console_level: INFO       # DEBUG, INFO, WARNING, ERROR
+  file_level: DEBUG
+  keep_last: 100            # oldest run logs beyond this count are deleted
+
+gpu:
+  device_id: 0              # CUDA device index (only used by the optional pose model)
+
+onnxruntime:                # only used by the optional pose model (requirements-pose.txt)
+  providers: [CUDAExecutionProvider, CPUExecutionProvider]
+  preload_cuda_dlls: true   # load CUDA/cuDNN from the nvidia-* pip packages, no CUDA Toolkit install needed
+
+steamvr:
+  tracking_universe: standing   # room calibration and everything after it is in SteamVR standing space
+
+cameras:
+  backend: any              # any, dshow (Windows DirectShow) or msmf (Windows Media Foundation).
+                            # On Windows, dshow usually reaches the highest frame rates and has the driver settings dialog.
+  ids: [0, 1, 2, 3]         # OpenCV device ids, one per camera; find them with probe_cameras
+  names: [cam1, cam2, cam3, cam4]   # one name per id, same order. Naming them by wall (north, east...) helps.
+  width: 1280               # the mode every camera is opened in (lens calibration is only valid for this size)
+  height: 720
+  fps: 30
+  fourcc: MJPG              # compressed USB mode; needed for 720p and up on most UVC webcams
+  require_exact_mode: true  # refuse a device that can't give exactly width x height in fourcc (a different camera took its id)
+  rotate: none              # none, cw90, ccw90 or 180; or a list, one per camera. For display only; calibration uses raw frames
+  exposure_ms: null         # null = automatic exposure. Fixed exposure (e.g. 7.8) keeps brightness steady between cameras
+  exposure_units: log2_s    # how exposure_ms is sent: log2_s (Windows dshow/msmf) or 100us (Linux V4L2)
+  auto_exposure_off_value: 0.25  # value OpenCV's Windows backends take as "manual exposure" (V4L2 usually 1)
+  gain: null                # null = leave the driver's value
+  white_balance_k: null     # e.g. 5600 to lock white balance so colours match between cameras; null = leave automatic
+  flicker_window_frames: 90 # frames for the preview's flicker meter (3 s at 30 fps)
+  open_delay_s: 0.5         # pause between opening cameras (some USB hubs dislike opening all at once)
+
+preview:
+  tile_height: 480          # pixels per camera tile in the preview and calibration windows
+  log_every_s: 5            # stats line per camera in the run log
+
+calibration:
+  dir: calibration/data     # boards, captured frames and calibration results (keep out of git)
+  print_dpi: 300
+  intrinsics:               # lens calibration (calib_intrinsics)
+    target_views: 40          # views captured before it calibrates by itself
+    min_corners: 8            # ChArUco corners a view needs
+    still_px: 1.5             # mean corner movement between frames that counts as "held still"
+    novelty_px: 40            # a view must differ from every earlier one by this many pixels on average
+    models: [fisheye, rational]   # both are tried; the lower RMS wins (fisheye gets a 5% preference)
+    outlier_factor: 3.0       # views with error over this x the median are dropped and it recalibrates
+    max_rms_px: 0.8           # GOOD below this
+    min_coverage: 0.6         # and with at least this share of the 8x6 image grid covered
+    refine_markers: true      # re-find markers the first pass missed, using the board layout (more range)
+    error_correction: 0.8     # share of a marker's correctable bit errors to accept (OpenCV default 0.6)
+    pixels_per_cell: 8        # sampling per marker bit (OpenCV default 4)
+  boards:
+    small:                    # lens-calibration board, one sheet of paper
+      squares: [5, 7]
+      square_mm: 34.0           # measure the print and correct this if it differs
+      marker_mm: 25.5
+      dictionary: DICT_5X5_250
+      first_marker_id: 0
+      page_mm: [215.9, 279.4]   # US letter; for A4 use [210.0, 297.0]
+  room:                       # room calibration (calib_room): a SteamVR tracker carrying a printed marker
+    marker_dictionary: DICT_4X4_50  # big cells, so it still reads from across the room
+    marker_id: 7
+    marker_mm: 160            # fits letter and A4. Fix the tracker rigidly above the card's edge, sensors clear
+    device: tracker           # tracker or controller; or put a serial number in device_serial
+    device_serial: null
+    vr_rate_hz: 250
+    detect_every_n_frames: 3  # marker detection on every Nth frame per camera
+    frame_latency_ms: 15      # rough time from exposure to frame arrival; the tracker pose is read this much earlier
+    still_speed_m_s: 0.05     # only use moments when the tracker is nearly still (camera timestamps jitter)
+    min_spacing_m: 0.05       # and at least this far from the previous kept moment for that camera
+    target_per_camera: 25     # still moments per camera; one stop counts for every camera that sees it
+    max_rms_px: 3.0           # GOOD below this
+  drift:
+    max_shift_px: 2.0         # a camera whose image moved more than this needs its room calibration redone
+    min_confidence: 0.2       # below this the frames are too different to compare (someone in the way)
+
+pose:                       # OPTIONAL (requirements-pose.txt): RTMPose via rtmlib, Halpe 26 keypoints
+  # Downloaded on first use from OpenMMLab (to ~/.cache/rtmlib). See NOTICE.md for their terms.
+  detector_url: https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/yolox_m_8xb8-300e_humanart-c2c7a14a.zip
+  detector_input: [640, 640]
+  detector_score: 0.5
+  pose_url: https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/rtmpose-m_simcc-body7_pt-body7-halpe26_700e-256x192-4d3e73dd_20230605.zip
+  pose_input: [192, 256]    # width, height
+  keypoint_score: 0.3       # a keypoint below this counts as not seen
+  min_visible_keypoints: 6  # fewer than this and the person counts as lost (the detector runs again)
+  redetect_every_n: 600     # run the detector anyway every N frames per camera (it is slow, ~30 ms)
+  cudnn_algo_search: EXHAUSTIVE  # GPU kernel choice; EXHAUSTIVE is slower to start, faster to run
+  cuda_graph: true          # replay the pose model as one recorded GPU graph (falls back if it can't)
+  batch: 4                  # crops per GPU run with the CUDA graph; set to your number of cameras
+  crop_margin: 0.15         # next crop = last keypoints plus this share of their size
+
+fusion:
+  keypoint_score: 0.3       # views below this score don't vote for a point
+  min_views: 2              # cameras that must see a point to place it
+  max_reprojection_px: 15   # a view further than this from the 3D point is dropped as wrong
+  min_cutoff: 1.5           # One Euro filter: lower = smoother when still, more lag
+  beta: 0.5                 # One Euro filter: higher = less lag when moving fast
+  d_cutoff: 1.0
+  max_jump_m: 0.4           # a point leaping further than this in one update is ignored as a mistake...
+  jump_accept_after: 5      # ...unless it stays there this many updates in a row
+  headset_to_head_m: [0.0, -0.02, 0.06]  # typical spot of the seen eyes/ears relative to the headset, in its own frame
