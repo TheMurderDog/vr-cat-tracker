@@ -131,9 +131,14 @@ improvement you can make: [cat_tracker/TRAINING.md](cat_tracker/TRAINING.md) wal
 If you use a fixed white balance, the tracker toggles each camera's auto white balance at startup and sets the fixed
 value again: two of my cameras had kept an old, much bluer white balance while still reporting the right one.
 
-## Not done yet
+## Showing your pet in VRChat (optional)
 
-- Nothing major right now. To show your pet to friends in VRChat, `run.bat --osc` sends its position (see `osc.py`), and [vrchat_avatar/](vrchat_avatar/README.md) has the avatar side.
+Friends in VRChat can see your pet as a small prop on your avatar:
+
+1. **Tracker side:** start the tracker with `run.bat --osc` (or install autostart with `--osc`). It sends your pet's position, state and heading to VRChat over OSC on this PC (see `osc.py`).
+2. **Avatar side:** add the drop-in prefab from [vrchat_avatar/](vrchat_avatar/README.md) to your avatar in Unity (VRChat SDK and VRCFury), upload, and turn on OSC in VRChat. It comes with a placeholder cat you can swap for your own model.
+
+[vrchat_avatar/README.md](vrchat_avatar/README.md) covers setup, the parameters and lining it up with `osc_test.bat`.
 
 ## Safety: it's an aid, not a guarantee
 
