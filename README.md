@@ -11,6 +11,10 @@ fast. A napping cat a little way off doesn't set it off. Her icon also shows whe
 2 minutes) or running. It works in any SteamVR game, and moving or turning your play space doesn't move her
 marker. Optionally it sends her position to VRChat over OSC, so friends can see her as an avatar prop.
 
+> **Use at your own risk.** This is a hobby project, not a safety device. It can miss your pet, and it comes with no
+> warranty: the authors aren't liable for any harm or damage. Making your setup safe enough is up to you. Please read
+> [DISCLAIMER.md](DISCLAIMER.md) before using it.
+
 Most of this project was written by an AI (Claude). See [How this was made](#how-this-was-made) for who did what.
 [docs/build_guide.md](docs/build_guide.md) explains how it was built step by step, including the decisions,
 the mistakes and what we learned. It's written so you can paste it into your own Claude project and build one for
@@ -148,7 +152,8 @@ This helps you notice your cat. It can't promise you'll never step on her, so pl
 - **If the cameras or base stations move,** the marker can be in the wrong place. The tracker checks this every few
   minutes and shows a notice; re-anchor when it does.
 
-As the license says, it comes with no warranty.
+Full list of risks and your responsibilities: [DISCLAIMER.md](DISCLAIMER.md). As the license says, it comes with no
+warranty and the authors aren't liable for damages.
 
 ## Privacy and security
 

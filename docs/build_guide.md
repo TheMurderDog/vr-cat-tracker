@@ -9,6 +9,9 @@ than we did.
 first message). Then fill in the "About my setup" section at the top of the prompt below. Everything
 after the prompt is background: what we built, in what order, why, and what went wrong along the way.
 
+**Safety note:** what's described here is a hobby project, not a safety device. It can miss your pet, and you build
+and use it at your own risk. See [DISCLAIMER.md](../DISCLAIMER.md).
+
 ---
 
 ## The prompt (paste this, then fill in the blanks)
