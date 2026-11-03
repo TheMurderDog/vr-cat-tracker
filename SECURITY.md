@@ -19,6 +19,9 @@ Security tab, rather than in a public issue.
 
 - **Model files can contain code.** `.pt` files are Python pickles, and loading one can run code. Only use
   `train.bat --base` and `yolo export` with `.pt` files from sources you trust. ONNX files (`.onnx`) are data.
+- **It saves pictures by itself.** Besides `capture.bat`, the tracker saves "hard" frames for training while it runs
+  (up to 150 moments per run; turn off with `hard_frames.enabled: false`). Anyone in view of the cameras can end up
+  in them.
 - **Your captures are pictures of your room.** `cat_tracker/captures`, `cat_tracker/logs` (snapshots) and
   `calibration/data` (reference pictures from each camera) show your room and anyone in it. They are in `.gitignore`;
   think twice before sharing them anywhere.

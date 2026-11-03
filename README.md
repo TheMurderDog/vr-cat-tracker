@@ -126,11 +126,35 @@ value again: two of my cameras had kept an old, much bluer white balance while s
 
 - Showing her to friends in VRChat: `run.bat --osc` sends her position (see `osc.py`); the avatar side is being built separately.
 
-## Privacy and safety
+## Safety: it's an aid, not a guarantee
 
-It runs locally and opens no network ports. The VRChat option sends positions to `127.0.0.1` (this PC) only. Captures,
-logs and calibration pictures show your room, so they're kept out of git; be careful sharing them. Only load `.pt`
-model files you trust (they can run code). See [SECURITY.md](SECURITY.md).
+This helps you notice your cat. It can't promise you'll never step on her, so please don't play as if it did.
+
+- **It can miss her.** Before you've trained it on your cat, it misses her often. Afterwards it can still miss her
+  when she's hidden from every camera, under furniture, in a blind spot, in poor light, or moving fast.
+- **It lags a little.** It looks for her a few times a second, and a sprinting cat can be underfoot before the
+  arrow shows.
+- **If it isn't running, nothing shows.** No marker can mean "no cat" or "the tracker stopped". Check that you see
+  her marker when she walks in before trusting it in a session.
+- **Keep your normal VR habits:** a cleared play area, SteamVR's boundary, and slower movements when she's around.
+  Don't rely on it for small children or other pets it wasn't trained on.
+- **If the cameras or base stations move,** the marker can be in the wrong place. The tracker checks this every few
+  minutes and shows a notice; re-anchor when it does.
+
+As the license says, it comes with no warranty.
+
+## Privacy and security
+
+It runs locally and opens no network ports. The VRChat option sends positions to `127.0.0.1` (this PC) only.
+
+- **It saves pictures.** `capture.bat` saves camera frames, and while the tracker runs it also saves "hard" frames
+  for training by itself (`hard_frames` in `cat_tracker/config.yaml`; set `enabled: false` to stop it). These are
+  pictures of your room and anyone in it. If you live with other people, let them know the cameras are there and
+  what gets saved.
+- Captures, logs and calibration pictures are kept out of git. Be careful sharing them.
+- Only load `.pt` model files you trust (they can run code).
+
+See [SECURITY.md](SECURITY.md) for more.
 
 ## How this was made
 
