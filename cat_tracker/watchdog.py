@@ -95,10 +95,10 @@ def main():
         vr.setup_haptics(HERE / "input" / "actions.json", log)
     images = {
         "stopped": render(HERE / "data" / "notice_stopped.png", "CAT TRACKER STOPPED",
-                          ["She is NOT being tracked.", "Restart it: restart_tracker.bat or run.bat",
+                          ["Your pet is NOT being tracked.", "Restart it: restart_tracker.bat or run.bat",
                            "Or run stop_tracker.bat to hide this."]),
         "frozen": render(HERE / "data" / "notice_frozen.png", "CAT TRACKER NOT RESPONDING",
-                         ["She may NOT be tracked.", "Restart it: restart_tracker.bat or run.bat",
+                         ["Your pet may NOT be tracked.", "Restart it: restart_tracker.bat or run.bat",
                           "Or run stop_tracker.bat to hide this."]),
     }
     vr.add_overlay("watchdog", images["stopped"], 0.6)

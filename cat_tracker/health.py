@@ -53,10 +53,10 @@ class Health:
         """(key, title, lines) for the notice to show, or None when everything is fine."""
         if self.det_fail_since is not None and now - self.det_fail_since > self.det_fail_s:
             return ("detector", "Cat tracker: detection failing",
-                    ["She is NOT being tracked right now.", "See cat_tracker/logs for the error."])
+                    ["Your pet is NOT being tracked right now.", "See cat_tracker/logs for the error."])
         if self.stale and len(self.stale) == len(self.names):
             return ("all_cameras", "Cat tracker: cameras stopped",
-                    ["No camera is sending pictures.", "She is NOT being tracked right now."])
+                    ["No camera is sending pictures.", "Your pet is NOT being tracked right now."])
         if self.stale:
             which = ", ".join(self.names[i] for i in self.stale)
             return ("cameras:" + which, "Cat tracker: camera stopped",
