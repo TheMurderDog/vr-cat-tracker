@@ -1,5 +1,17 @@
 # VR cat tracker
 
+## ⬇️ Download
+
+[![Download the cat tracker (ZIP)](https://img.shields.io/badge/Download-Cat%20tracker%20(ZIP)-2ea44f?style=for-the-badge&logo=github)](https://github.com/TheMurderDog/vr-cat-tracker/archive/refs/heads/main.zip)
+&nbsp;
+[![Download the VRChat avatar package](https://img.shields.io/badge/Download-VRChat%20avatar%20package-1f6feb?style=for-the-badge&logo=unity)](https://github.com/TheMurderDog/vr-cat-tracker/raw/main/vrchat_avatar/CatTracker.unitypackage)
+
+- **Cat tracker (ZIP):** the whole project. Unzip it anywhere, then follow [Getting started](#getting-started).
+- **VRChat avatar package (optional):** `CatTracker.unitypackage`, to show your pet to friends in VRChat. Import it into
+  your Unity avatar project and follow [vrchat_avatar/README.md](vrchat_avatar/README.md).
+
+No GitHub account needed. Both buttons download straight away and always give you the latest version.
+
 My cat kept surprising me while I was in VR, and sometimes I'd step on it or bump into it, so I ended up
 shutting it out of the room when I played. This project uses the cameras from my DIY full-body tracking
 setup to find it and show it in SteamVR, so now it can hang out with me while I play.
