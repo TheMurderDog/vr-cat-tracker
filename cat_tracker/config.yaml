@@ -119,6 +119,13 @@ anchor_check:               # while running, every few minutes: is the saved anc
   max_scatter_m: 0.08       # sightings scattered more than this are ignored (someone else in view, headset not worn)
   image: cat_tracker/assets/anchor_warning.png
 
+health:                     # so that no marker only ever means "no cat", never "the tracker stopped looking"
+  camera_stale_s: 2.0       # a camera with no new picture for this long: a notice in VR, and its old picture is ignored
+  detector_fail_s: 3.0      # detection failing for this long: a notice in VR
+  watchdog: true            # a small separate process (watchdog.py) that shows "CAT TRACKER STOPPED" in VR and
+                            # buzzes the controllers if the tracker crashes, is killed or freezes
+  hang_s: 15                # no sign of life from the tracker for this long counts as frozen
+
 hard_frames:                # saves moments the model struggled with, for the next training round (see hardframes.py)
   enabled: true             # only when 2+ cameras are sure of her and another camera that should see her didn't
   every_s: 3.0              # at most one moment (4 images) this often

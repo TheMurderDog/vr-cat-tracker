@@ -15,7 +15,11 @@ track.bat can't run at the same time.
 
 import argparse
 import json
+import os
+import subprocess
+import sys
 import time
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -27,6 +31,8 @@ from cat_tracker import settings
 from cat_tracker.detector import CatDetector, draw
 from cat_tracker.collect import FrameSaver
 from cat_tracker.hardframes import HardSaver
+from cat_tracker.health import Health, Heartbeat
+from cat_tracker.notice import render as render_notice
 from cat_tracker.locate import CatTrack, locate, room_bounds, weak_matches
 from cat_tracker.osc import OscCat, OscStream
 from cat_tracker.vrlink import billboard, edge_pose, flat, horizontal_distance
@@ -91,6 +97,24 @@ def tiles(items, names, boxes_all, picked, views=None, tile_h=360, banner=None):
     return grid
 
 
+def start_watchdog(hang_s, buzz, log):
+    """Starts watchdog.py as its own process, detached, so it outlives this one if it crashes."""
+    exe = Path(sys.executable)
+    if os.name == "nt" and exe.with_name("pythonw.exe").is_file():
+        exe = exe.with_name("pythonw.exe")  # no console window
+    flags = (subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
+    cmd = [str(exe), "-m", "cat_tracker.watchdog", "--pid", str(os.getpid()), "--hang-s", str(hang_s)]
+    if not buzz:
+        cmd.append("--no-buzz")
+    try:
+        subprocess.Popen(cmd, cwd=str(Path(__file__).resolve().parent.parent), creationflags=flags,
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         close_fds=True, start_new_session=os.name != "nt")
+        log.info("Watchdog started: a notice shows in VR if the tracker stops unexpectedly")
+    except OSError as e:
+        log.warning("Couldn't start the watchdog (%s): a crash won't show a notice in VR", e)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Cat tracker")
     ap.add_argument("--config", help="camera core config.yaml (default: its own)")
@@ -149,6 +173,7 @@ def main():
     win = "Cat tracker (q quits, a re-anchors, s saves a snapshot)"
 
     def show_anchor(items, views):
+        heartbeat.beat()  # the walk-around can take a minute; the watchdog mustn't think we froze
         g = tiles(items, names, None, [None] * len(items), views, tile_h, "Anchoring: headset on, walk slowly around the room")
         if g is not None:
             cv2.imshow(win, g)
@@ -160,6 +185,10 @@ def main():
             log.error("No anchor: her marker can't be placed in SteamVR until one succeeds (press a to retry)")
         return T
 
+    hc_ = cc.get("health", {}) or {}
+    notice_dir = resolve_path("cat_tracker/data")
+    health = Health(hc_, names)
+    heartbeat = Heartbeat(notice_dir / "heartbeat.json")
     raw_to_cam = cam_to_raw = None
     if vr is not None:
         raw_to_cam = anc.load(cfg) if args.reuse_anchor else None
@@ -178,6 +207,7 @@ def main():
         vr.add_overlay("ring", resolve_path(oc["ring"]), oc.get("ring_width_m", 0.55))
         vr.add_overlay("edge", resolve_path(al.get("image", "cat_tracker/assets/edge_arrow.png")), al.get("width_m", 0.07))
         vr.add_overlay("warn", resolve_path(get(cfg, "cat.anchor_check.image", "cat_tracker/assets/anchor_warning.png")), 0.5)
+        vr.add_overlay("health", render_notice(notice_dir / "notice_health.png", "Cat tracker"), 0.5)
         if al.get("buzz", True):
             vr.setup_haptics(resolve_path("cat_tracker/input/actions.json"), log)
 
@@ -216,20 +246,71 @@ def main():
     stop_file.unlink(missing_ok=True)
     loops = 0
     close = False  # from the last update, used to pick the detection rate
+    heartbeat.beat(force=True)
+    if vr is not None and hc_.get("watchdog", True):
+        start_watchdog(float(hc_.get("hang_s", 15)), bool(al.get("buzz", True)), log)
+    clean = False  # set when we stop on purpose; anything else (a crash) leaves the watchdog to warn you
+    shown_notice = None
+    pos, state, alpha = None, "hidden", 0.0
+    items = boxes_all = picked = None
+
+    def show_health(now):
+        """The tracker's own problems (a camera stopped, detection failing), as a notice in VR."""
+        nonlocal shown_notice
+        msg = health.message(now)
+        key = msg[0] if msg else None
+        if key != shown_notice:
+            if msg:
+                log.warning("%s: %s", msg[1], " ".join(msg[2]))
+                if vr is not None:
+                    vr.set_image("health", render_notice(notice_dir / f"notice_health_{abs(hash(key)) % 1000}.png", msg[1], msg[2]))
+            elif shown_notice is not None:
+                log.info("Tracker problem cleared")
+            shown_notice = key
+        if vr is not None:
+            if msg:
+                T = np.eye(4)
+                T[:3, 3] = [0.0, -0.2, -1.2]
+                T[:3, :3] = [[1, 0, 0], [0, np.cos(0.15), np.sin(0.15)], [0, -np.sin(0.15), np.cos(0.15)]]
+                vr.place_on_head("health", T, 0.9)
+            else:
+                vr.place_on_head("health", None, 0)
+        return msg
+
     try:
         while True:
             tick = time.perf_counter()
+            heartbeat.beat()
             # detection runs at detector.rate_hz (a few times a second is plenty for a cat); the overlays,
             # edge arrow and OSC offset follow your head at overlay.update_hz using her last position
             fresh = time.monotonic() - last_det >= det_period
             if fresh:
                 items = [c.latest(rotated=False) for c in cams]
-                if any(it is None for it in items):
-                    time.sleep(0.01)
+                stale = health.cameras(items, time.monotonic())
+                if any(it is None for it in items):  # a camera that hasn't sent its first picture yet
+                    show_health(time.monotonic())
+                    if vr is not None and vr.quit_requested():
+                        log.info("SteamVR is closing; stopping")
+                        clean = True
+                        break
+                    if stop_file.exists():
+                        stop_file.unlink(missing_ok=True)
+                        log.info("Asked to stop (stop_tracker.bat)")
+                        clean = True
+                        break
+                    time.sleep(0.05)
                     continue
                 last_det = time.monotonic()
                 td = time.perf_counter()
-                boxes_all = det([it[0] for it in items])
+                try:
+                    boxes_all = det([it[0] for it in items])
+                    health.detector_ok()
+                except Exception:  # noqa: BLE001 - keep running and say so, rather than vanish
+                    log.exception("Detection failed")
+                    health.detector_failed(time.monotonic())
+                    boxes_all = [np.zeros((0, 5)) for _ in items]
+                for i in stale:  # an old picture says nothing about where she is now
+                    boxes_all[i] = boxes_all[i][:0]
                 stats["det_ms"].append(1000 * (time.perf_counter() - td))
                 X, used, how, picked = locate(rig, [b[b[:, 4] >= strong] for b in boxes_all], lc, bounds)
                 how_strong, picked_strong = how, picked
@@ -269,7 +350,9 @@ def main():
             dist = level = None
             if vr is not None and vr.quit_requested():
                 log.info("SteamVR is closing; stopping")
+                clean = True
                 break
+            problem = show_health(time.monotonic())
             if vr is not None and cam_to_raw is not None:
                 vr.update_input()
                 M = vr.raw_to_standing()
@@ -339,12 +422,15 @@ def main():
                     banner += "  |  %.2f m/s" % motion.speed
                 if vr is not None and cam_to_raw is None:
                     banner += "  |  NO ANCHOR: press a"
+                if problem:
+                    banner += "  |  " + problem[1].upper()
                 if saver is not None and saver.on:
                     banner += "  |  CAPTURING (%d)" % saver.n
                 g = tiles(items, names, boxes_all, picked, None, tile_h, banner)
                 cv2.imshow(win, g)
                 key = cv2.waitKey(1) & 0xFF
                 if key in (ord("q"), 27):
+                    clean = True
                     break
                 if key == ord("s"):
                     snap_dir.mkdir(parents=True, exist_ok=True)
@@ -370,6 +456,7 @@ def main():
                     if T is not None:
                         raw_to_cam, cam_to_raw = T, np.linalg.inv(T)
                         check.reset()
+                    heartbeat.beat(force=True)
 
             if now - last_log > 5:
                 n = max(stats["n"], 1)
@@ -380,17 +467,23 @@ def main():
                 stats = {"n": 0, "det_ms": [], "views": [], "seen": 0, "how": {}}
                 last_log = now
             if args.seconds and now - t0 > args.seconds:
+                clean = True
                 break
             if now - last_stop_check > 1.0:
                 last_stop_check = now
                 if stop_file.exists():
                     stop_file.unlink(missing_ok=True)
                     log.info("Asked to stop (stop_tracker.bat)")
+                    clean = True
                     break
             spare = period - (time.perf_counter() - tick)
             if spare > 0:
                 time.sleep(spare)
+    except KeyboardInterrupt:  # Ctrl+C in the console counts as closing it on purpose
+        clean = True
     finally:
+        if clean:
+            heartbeat.stopped()  # the watchdog closes quietly; without this it warns you in VR
         if stream is not None:
             stream.stop()
         if osc is not None:

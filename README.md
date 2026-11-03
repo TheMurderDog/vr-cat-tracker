@@ -87,6 +87,10 @@ All of the cat tracker's scripts below are in `cat_tracker\` and are run from th
 
 While it runs, the tracker also saves moments the model struggled with (two or more cameras sure of her, another one that should see her missing her) into `captures\<date>-<time>-hard`, at most 150 moments per run and only with 10 GB free. `label.bat` goes through every session with unchecked images, newest first, so just run it, then `train_more.bat`. Skip `autolabel.bat` for these: their missing-camera boxes are already filled in (orange). Every 3 minutes it also checks the saved anchor against your head; if it's more than 10 cm off, a notice shows low in your view until you re-anchor.
 
+If the tracker stops without being closed (a crash, or its console window closed), a red **CAT TRACKER STOPPED**
+notice shows in VR and the controllers buzz. Restart it with `restart_tracker.bat` or `run.bat`, or run
+`stop_tracker.bat` to hide the notice.
+
 Window keys: `q` quits, `a` re-runs the anchor, `s` saves a snapshot, `c` starts/stops capturing. Logs go to `cat_tracker\logs`.
 
 The cameras can only be opened by one program at a time, so close `preview.bat` (or anything else using them) first.
@@ -134,8 +138,11 @@ This helps you notice your cat. It can't promise you'll never step on her, so pl
   when she's hidden from every camera, under furniture, in a blind spot, in poor light, or moving fast.
 - **It lags a little.** It looks for her a few times a second, and a sprinting cat can be underfoot before the
   arrow shows.
-- **If it isn't running, nothing shows.** No marker can mean "no cat" or "the tracker stopped". Check that you see
-  her marker when she walks in before trusting it in a session.
+- **It tells you when it stops working.** If a camera stops sending pictures or detection keeps failing, a notice
+  shows in VR. If the tracker itself crashes, is closed or freezes, a small separate watchdog shows
+  "CAT TRACKER STOPPED" in front of you and buzzes the controllers (`health` in `cat_tracker/config.yaml`). The
+  watchdog can't help if your whole PC or SteamVR hangs, so still check that you see her marker when she walks in
+  before trusting it in a session.
 - **Keep your normal VR habits:** a cleared play area, SteamVR's boundary, and slower movements when she's around.
   Don't rely on it for small children or other pets it wasn't trained on.
 - **If the cameras or base stations move,** the marker can be in the wrong place. The tracker checks this every few
