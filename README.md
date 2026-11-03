@@ -27,6 +27,7 @@ your setup.
 | the top level (`core/`, `capture/`, `calibration/`, `fusion/`, `pose/`, `tools/`) | the **camera core**: multi-webcam capture and calibration for SteamVR, taken from my full-body tracking project. It places ordinary USB webcams in your SteamVR space, so anything two or more cameras see can be located in 3D. See [CORE_README.md](CORE_README.md) and [CALIBRATION.md](CALIBRATION.md). |
 | `cat_tracker/` | the cat tracker, built on top of the camera core |
 | `docs/build_guide.md` | how it was built, for pasting into your own Claude project |
+| `vrchat_avatar/` | the VRChat avatar side: a drop-in Unity prefab (VRCFury) with a placeholder cat, so friends in VRChat can see your pet. See [vrchat_avatar/README.md](vrchat_avatar/README.md). MIT licensed. |
 
 ## What you need
 
@@ -132,7 +133,7 @@ value again: two of my cameras had kept an old, much bluer white balance while s
 
 ## Not done yet
 
-- Showing it to friends in VRChat: `run.bat --osc` sends its position (see `osc.py`); the avatar side is being built separately.
+- Nothing major right now. To show your pet to friends in VRChat, `run.bat --osc` sends its position (see `osc.py`), and [vrchat_avatar/](vrchat_avatar/README.md) has the avatar side.
 
 ## Safety: it's an aid, not a guarantee
 
@@ -186,4 +187,4 @@ It has been tested on the reference setup above. If you'd rather not use AI-writ
 
 ## License
 
-AGPL-3.0, because it uses Ultralytics YOLO11, which is AGPL-3.0. See [LICENSE](LICENSE).
+AGPL-3.0, because it uses Ultralytics YOLO11, which is AGPL-3.0. See [LICENSE](LICENSE). The `vrchat_avatar/` folder is MIT licensed (see [vrchat_avatar/LICENSE](vrchat_avatar/LICENSE)).
