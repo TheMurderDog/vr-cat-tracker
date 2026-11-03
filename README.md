@@ -126,6 +126,12 @@ value again: two of my cameras had kept an old, much bluer white balance while s
 
 - Showing her to friends in VRChat: `run.bat --osc` sends her position (see `osc.py`); the avatar side is being built separately.
 
+## Privacy and safety
+
+It runs locally and opens no network ports. The VRChat option sends positions to `127.0.0.1` (this PC) only. Captures,
+logs and calibration pictures show your room, so they're kept out of git; be careful sharing them. Only load `.pt`
+model files you trust (they can run code). See [SECURITY.md](SECURITY.md).
+
 ## How this was made
 
 This project was built with heavy use of AI. Most of the code and documentation was written by Claude, an AI

@@ -15,7 +15,6 @@ Re-solve from the last recording without moving anything:  python -m tools.calib
 
 import argparse
 import json
-import pickle
 import threading
 import time
 
@@ -71,11 +70,13 @@ def main():
     names = camera_names(cfg)
     n = len(names)
     intrinsics = load_intrinsics(data_dir, names)
-    rec_path = data_dir / "room_recording.pkl"
+    rec_path = data_dir / "room_recording.json"  # JSON, not pickle: loading it can never run code
 
     if args.resolve:
-        with open(rec_path, "rb") as f:
-            rec = pickle.load(f)
+        with open(rec_path, "r", encoding="utf-8") as f:
+            rec = json.load(f)
+        rec["obs"] = [(int(o[0]), np.asarray(o[1], np.float64), np.asarray(o[2], np.float64), np.asarray(o[3], np.float64))
+                      for o in rec["obs"]]
         refs = {i: cv2.imread(str(data_dir / f"reference_{names[i]}.png")) for i in range(n)}
         ok = solve_and_save(log, rec["obs"], intrinsics, names, rc, data_dir, {k: v for k, v in refs.items() if v is not None})
         log.info("Log: %s", log_file)
@@ -180,8 +181,9 @@ def main():
         vr.stop()
         cv2.destroyAllWindows()
     log.info("Kept observations per camera: %s", counts)
-    with open(rec_path, "wb") as f:
-        pickle.dump({"obs": obs, "counts": counts}, f)
+    with open(rec_path, "w", encoding="utf-8") as f:
+        json.dump({"obs": [[int(o[0])] + [np.asarray(v, np.float64).tolist() for v in o[1:]] for o in obs],
+                   "counts": [int(c) for c in counts]}, f)
     if not solved:
         log.info("Quit without solving. Recording saved; solve it later with --resolve")
         log.info("Log: %s", log_file)

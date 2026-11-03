@@ -7,17 +7,12 @@ tracker uses it exactly like the full-precision one. Boxes match the fp32 model 
     cat_tracker\\.venv\\Scripts\\python.exe -m cat_tracker.half <best.onnx> <out.onnx>
 """
 
-import subprocess
 import sys
 import warnings
 
 
 def make_half(src, dst):
-    try:
-        from onnxconverter_common import float16
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "onnxconverter-common"])
-        from onnxconverter_common import float16
+    from onnxconverter_common import float16  # in requirements-train.txt; never installed on the fly
     import onnx
     m = onnx.load(str(src))
     # the box decoding at the end (model.23, apart from its conv branches) stays fp32
