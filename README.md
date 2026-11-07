@@ -101,20 +101,15 @@ come from that setup, so yours will differ:
 
 ## How this was made
 
-This project was built with heavy use of AI. Most of the code and documentation was written by Claude, an AI
-model made by Anthropic, working in conversation with me (TheMurderDog):
+Claude, an AI model made by Anthropic, built nearly all of this project: the code, the documentation (including this
+README), the overall approach, and most of the problem-solving along the way. That covers detection, triangulation, the
+SteamVR overlay and anchor, the capture, labelling and training tools, the alerts, the VRChat OSC sender and the camera
+code, which came from my full-body tracking project, also built with Claude.
 
-- **Claude** wrote the code: detection, triangulation, the SteamVR overlay and anchor, the capture, autolabel,
-  labelling and training tools, the alerts, the VRChat OSC sender. Claude also wrote the docs, including this README.
-  It also proposed the overall approach and diagnosed problems from logs, such as the stuck white balance.
-- **I** came up with the idea and made the design calls, for example tying everything to SteamVR's raw space
-  because I move my play space a lot, replacing the beep with an edge-of-view arrow, and capping the hard-frame
-  saving. I suggested the cross-camera and gap-filling autolabel. I built and calibrated the camera rig, captured
-  and labelled the training data, and tested every change on real hardware with my cat.
-- The **camera code** in `engine` was taken from my full-body tracking project, which was also built with Claude.
+I'm the ideas guy and the tester (TheMurderDog). I had the idea, asked for what I wanted, built the camera rig, captured
+and labelled my cat's pictures, and tried each change on real hardware.
 
-It has been tested on the reference setup above. If you'd rather not use AI-written software, this should help you
-decide.
+If you'd rather not use AI-written software, this should help you decide.
 
 ## License
 
