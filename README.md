@@ -12,19 +12,19 @@
 
 No GitHub account needed. Both buttons download straight away and always give you the latest version.
 
-My cat kept surprising me while I was in VR, and sometimes I'd step on it or bump into it, so I ended up
-shutting it out of the room when I played. This project uses the cameras from my DIY full-body tracking
-setup to find it and show it in SteamVR, so now it can hang out with me while I play.
+My cat kept surprising me while I was in VR, so I built this to see roughly where it is while I play. It uses
+the cameras from my DIY full-body tracking setup to find it and show it in SteamVR. It's an extra hint, not a
+guard: I still keep my play area clear and play carefully when the cat is in the room.
 
-It shows a cat icon floating where it really is, with a ring on the floor under it. When it's close, a small
-arrow appears at the edge of your view pointing toward it, and the controllers give a short buzz. That
-happens whenever it's under 1 m away, within 1.8 m if it's moving, and earlier when one of you is closing in
+It shows a cat icon where the cameras think it is, with a ring on the floor under it. When it sees the cat close
+to you, it shows a small arrow at the edge of your view pointing toward it, and buzzes the controllers. It's set to do
+that when it sees the cat under 1 m away, within 1.8 m if it's moving, and earlier when one of you is closing in
 fast. A napping cat a little way off doesn't set it off. Its icon also shows when it's asleep (still for
 2 minutes) or running. It works in any SteamVR game, and moving or turning your play space doesn't move its
 marker. Optionally it sends its position to VRChat over OSC, so friends can see it as an avatar prop.
 
 > **Use at your own risk.** This is a hobby project, not a safety device. It can miss your pet, and it comes with no
-> warranty: the authors aren't liable for any harm or damage. Making your setup safe enough is up to you. Please read
+> warranty: the authors aren't liable for any harm or damage. Whether and how you use it is up to you. Please read
 > [DISCLAIMER.md](DISCLAIMER.md) before using it.
 
 Most of this project was written by an AI (Claude). See [How this was made](#how-this-was-made) for who did what.
@@ -39,6 +39,7 @@ your setup.
 | the top level (`core/`, `capture/`, `calibration/`, `fusion/`, `pose/`, `tools/`) | the **camera core**: multi-webcam capture and calibration for SteamVR, taken from my full-body tracking project. It places ordinary USB webcams in your SteamVR space, so anything two or more cameras see can be located in 3D. See [CORE_README.md](CORE_README.md) and [CALIBRATION.md](CALIBRATION.md). |
 | `cat_tracker/` | the cat tracker, built on top of the camera core |
 | `docs/build_guide.md` | how it was built, for pasting into your own Claude project |
+| `docs/language_rules.md` | the wording rules for anyone (or any AI) changing the docs or on-screen text |
 | `vrchat_avatar/` | the VRChat avatar side: a drop-in Unity prefab (VRCFury) with a placeholder cat, so friends in VRChat can see your pet. See [vrchat_avatar/README.md](vrchat_avatar/README.md). MIT licensed. |
 
 ## What you need
@@ -79,8 +80,8 @@ Settings to tweak are mainly `cameras.exposure_ms`, `detector.gamma` and `detect
 3. **Train it on your cat. This isn't optional if you want it to work well.** The stock model has never seen a cat
    from a ceiling camera. Follow [cat_tracker/TRAINING.md](cat_tracker/TRAINING.md): capture, autolabel, label, train.
    One round took my tracker from about 1 camera in 4 seeing it to all 4.
-4. **In VR:** start SteamVR, then `cat_tracker\run.bat`. The first time, put the headset on and walk slowly around
-   the room for 10 to 20 seconds (the anchor).
+4. **In VR:** start SteamVR, then `cat_tracker\run.bat`. The first time, clear the floor (cables, bags, toys), then put
+   the headset on and walk slowly around the room for 10 to 20 seconds, only where you know it's clear (the anchor).
 
 Settings are in `config.yaml` (the cameras) and `cat_tracker/config.yaml` (the cat tracker). In the top-level
 `config.yaml`, check `fusion.headset_to_head_m` (from the headset to the middle of your head): the default suits a
@@ -92,7 +93,7 @@ All of the cat tracker's scripts below are in `cat_tracker\` and are run from th
 
 | Script | What it does |
 | --- | --- |
-| `run.bat` | The tracker. Start SteamVR first. On first run it asks you to put the headset on and walk slowly around the room for about 10 to 20 seconds (the anchor, below). Add `--reuse-anchor` to skip that next time. |
+| `run.bat` | The tracker. Start SteamVR first. On first run it asks you to put the headset on and walk slowly around the room for about 10 to 20 seconds (the anchor, below): clear the floor first, and walk only where you know it's clear. Add `--reuse-anchor` to skip that next time. |
 | `desktop_test.bat` | Same detection with no SteamVR: the four cameras with its box drawn, and its position in the window. Good for checking it's found before going into VR. |
 | `capture.bat` | Saves one frame from each camera every 2 s for training, with the stock model's guesses as starting labels, into `cat_tracker\captures`. Leave it running while it wanders, plays and naps (10 minutes is 1200 images). `c` in any tracker window starts and stops capturing too. |
 | `autolabel.bat` | Run before `label.bat`. Where one camera found it, it projects its outline into the cameras that missed it; where it was found before and after a gap in the same spot, it fills the gap. Added boxes show orange in `label.bat` for you to check. |
@@ -152,19 +153,19 @@ Friends in VRChat can see your pet as a small prop on your avatar:
 
 [vrchat_avatar/README.md](vrchat_avatar/README.md) covers setup, the parameters and lining it up with `osc_test.bat`.
 
-## Safety: it's an aid, not a guarantee
+## Limits: it's an aid, not a guarantee
 
 This helps you notice your cat. It can't promise you'll never step on it, so please don't play as if it did.
 
 - **It can miss your cat.** Before you've trained it on your cat, it misses the cat often. Afterwards it can still miss it
   when it's hidden from every camera, under furniture, in a blind spot, in poor light, or moving fast.
-- **It lags a little.** It looks for the cat a few times a second, and a sprinting cat can be underfoot before the
-  arrow shows.
-- **It tells you when it stops working.** If a camera stops sending pictures or detection keeps failing, a notice
+- **It lags.** It looks for the cat a few times a second, and you also need time to react, so a running cat can be
+  underfoot before you can do anything about the arrow.
+- **It tries to tell you when it stops working.** If a camera stops sending pictures or detection keeps failing, a notice
   shows in VR. If the tracker itself crashes, is closed or freezes, a small separate watchdog shows
   "CAT TRACKER STOPPED" in front of you and buzzes the controllers (`health` in `cat_tracker/config.yaml`). The
-  watchdog can't help if your whole PC or SteamVR hangs, so still check that you see its marker when it walks in
-  before trusting it in a session.
+  watchdog can't help if your whole PC or SteamVR hangs, so check that you see its marker when it walks in at the
+  start of every session. An empty view can mean the tracker stopped, not that your cat is away.
 - **Keep your normal VR habits:** a cleared play area, SteamVR's boundary, and slower movements when it's around.
   Don't rely on it for small children or other pets it wasn't trained on.
 - **If the cameras or base stations move,** the marker can be in the wrong place. The tracker checks this every few
@@ -180,8 +181,10 @@ It runs locally and opens no network ports. The VRChat option sends positions to
 - **It saves pictures.** `capture.bat` saves camera frames, and while the tracker runs it also saves "hard" frames
   for training by itself (`hard_frames` in `cat_tracker/config.yaml`; set `enabled: false` to stop it). These are
   pictures of your room and anyone in it. If you live with other people, let them know the cameras are there and
-  what gets saved.
-- Captures, logs and calibration pictures are kept out of git. Be careful sharing them.
+  what gets saved. Recording laws differ by country and state, so check yours, and don't point cameras at a bed,
+  bathroom or anywhere people undress.
+- Captures, logs and calibration pictures are kept out of git. Be careful sharing them, and never attach them to a
+  public GitHub issue (copying text from a log is fine).
 - Only load `.pt` model files you trust (they can run code).
 
 See [SECURITY.md](SECURITY.md) for more.
@@ -204,4 +207,4 @@ It has been tested on the reference setup above. If you'd rather not use AI-writ
 
 ## License
 
-AGPL-3.0, because it uses Ultralytics YOLO11, which is AGPL-3.0. See [LICENSE](LICENSE). The `vrchat_avatar/` folder is MIT licensed (see [vrchat_avatar/LICENSE](vrchat_avatar/LICENSE)).
+Copyright (C) 2026 TheMurderDog. AGPL-3.0, because it uses Ultralytics YOLO11, which is AGPL-3.0. See [LICENSE](LICENSE). The `vrchat_avatar/` folder is MIT licensed (see [vrchat_avatar/LICENSE](vrchat_avatar/LICENSE)).

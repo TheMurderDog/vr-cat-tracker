@@ -25,6 +25,8 @@ Security tab, rather than in a public issue.
 - **Your captures are pictures of your room.** `cat_tracker/captures`, `cat_tracker/logs` (snapshots) and
   `calibration/data` (reference pictures from each camera) show your room and anyone in it. They are in `.gitignore`;
   think twice before sharing them anywhere.
+- **Never attach pictures from those folders to a public issue.** Describe the problem in words, or crop a picture so
+  only the problem shows. Copying text from a log is fine.
 - **Calibration files are yours.** Calibration results are JSON and plain data, so loading someone else's can't run code,
   but they won't match your cameras.
 - **Autostart** (`install_autostart.bat`) registers the tracker with SteamVR using the absolute path of this folder's

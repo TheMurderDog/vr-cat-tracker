@@ -15,8 +15,7 @@ copied from other projects. These parts are new implementations of published met
 - **Halpe 26 keypoint names** (`pose/baseline.py`): the keypoint list of the Halpe dataset, needed
   to read the pose model's output.
 
-The project is meant to be published under **AGPL-3.0**. Put the license text in the repository's
-`LICENSE` file.
+The project is published under **AGPL-3.0** (see `LICENSE`).
 
 ## Python dependencies
 
@@ -33,7 +32,7 @@ from an AGPL-3.0 project.
 | *optional* onnxruntime-gpu | running the pose model | MIT (its CUDA/cuDNN pip packages are under NVIDIA's own license terms) |
 | *optional* rtmlib | pose model wrapper | Apache-2.0 |
 
-## Optional pose model (`pose/baseline.py`)
+## Pose model (`pose/baseline.py`), used by the cat tracker's anchor
 
 `pose/baseline.py` uses two pretrained models from OpenMMLab's MMPose project, through rtmlib:
 

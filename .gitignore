@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 logs/
 calibration/data/
+# written by setup.bat when you accept the disclaimer
+accepted_disclaimer.txt

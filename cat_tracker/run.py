@@ -221,6 +221,9 @@ def main():
     buzz_armed, calm_since = True, None  # one buzz pattern each time the warning comes on, see alert.buzz_rearm_s
     hc = cc.get("hard_frames", {}) or {}
     hard = HardSaver(resolve_path("cat_tracker/captures"), names, hc, lc, log) if hc.get("enabled", True) else None
+    if hard is not None:  # say so every run: anyone in view can end up in these pictures
+        log.info("Saving training pictures while it runs: ON. Anyone in view can be in them. "
+                 "Turn off: hard_frames enabled: false in cat_tracker\\config.yaml")
     check = anc.AnchorCheck(cfg, log) if vr is not None else None
     icons = {k: resolve_path(oc[k]) for k in ("icon", "icon_close", "icon_rest", "icon_move") if oc.get(k)}
     osc = OscCat(cc.get("vrchat", {}) or {}) if args.osc and vr is not None else None

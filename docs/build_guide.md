@@ -34,7 +34,7 @@ and use it at your own risk. See [DISCLAIMER.md](../DISCLAIMER.md).
 > **Rules for working with me:**
 > - My existing camera/tracking project is off limits: read from it, import from it, but never modify it.
 >   Put everything for this in its own folder (and its own Python environment for training).
-> - Build the safety part first (a SteamVR overlay marker that works in every game). VRChat is a later, optional phase.
+> - Build the SteamVR overlay marker first (it works in every game). VRChat is a later, optional phase.
 > - Give me .bat (or shell) scripts to double-click for every step, and tell me exactly what to run next.
 > - When you change a config file for me, check afterwards that the change actually saved.
 > - Put tunable numbers in one config file with a comment on each explaining what it does.
@@ -145,7 +145,7 @@ that. One fine-tuning round took us from roughly 1 of 4 cameras seeing it to all
 ### Phase 4: Better warnings
 - A beep at 1 m was annoying. Replaced with a **head-locked arrow** near the edge of view (~32° off centre,
   1 m away, ~7 cm wide) pointing toward it, and its icon turns red.
-- **Warn on more than distance:** always under 1 m; under 1.8 m only if it's moving; earlier if either of you is
+- **Warn on more than distance:** under 1 m (even if it's asleep); under 1.8 m only if it's moving; earlier if either of you is
   closing in fast enough to meet within 2.5 s (up to 4 m away). Ignore slow closing speeds (< 0.2 m/s).
 - **Haptics** via SteamVR Input (an `actions.json` + bindings per controller type): one short L-R-L-R pattern
   each time the warning comes on, re-armed only after it's been off for 1 s. Constant buzzing drained batteries.
@@ -169,7 +169,7 @@ that. One fine-tuning round took us from roughly 1 of 4 cameras seeing it to all
 
 ### Phase 6 (optional): VRChat
 - **Send its position relative to your head, not in world space.** VRChat's world position doesn't follow
-  SteamVR play space moves, but "1.2 m ahead and 0.4 m to the right of my head" is always right.
+  SteamVR play space moves, but "1.2 m ahead and 0.4 m to the right of my head" stays right.
 - OSC to `127.0.0.1:9000`, sent from its own thread at ~60 Hz with a fresh headset pose each time. Parameters
   we used (floats divided by a 4 m range to fit -1..1):
   `CatAhead`, `CatRight`, `CatVisible`, `CatState` (0 normal, 1 resting, 2 moving), `CatNear`, plus room-frame
@@ -178,7 +178,7 @@ that. One fine-tuning round took us from roughly 1 of 4 cameras seeing it to all
   to the head, with the prop offset driven by the parameters through a blend tree. We handed this to a separate
   avatar project with a written brief. An `osc_test` script that holds a fake cat 1 m ahead of you made lining
   it up easy.
-- Your own SteamVR marker stays on regardless, so you see both where it really is and what others see.
+- Your own SteamVR marker stays on regardless, so you see both where the tracker places it and what others see.
 
 ---
 
@@ -208,7 +208,7 @@ held in view of the cameras, or a bright marker on the headset.
 - **Not hijacking a spare tracker (like an elbow) for the pet.** VRChat assigns trackers to body joints at
   calibration, so it would be either ignored or bend your arm. Drivers like VMT are fine for prototyping only.
 - **SteamVR overlay first, VRChat later.** The overlay works in every game, follows play space moves, and is the
-  actual safety feature. VRChat is a nice extra.
+  part that matters while you play. VRChat is a nice extra.
 - **Read-only access to the existing tracking project.** No risk of breaking the body tracking. The cost is that both
   can't use the cameras at once (only one program can open them). Merging cat detection into the body tracker
   is a possible later step.
@@ -256,7 +256,7 @@ Treat these as starting points; your room, cameras and pet will differ.
 | One Euro filter | min_cutoff 1.0, beta 0.8 |
 | Max jump | 1.0 m unless repeated 2 times |
 | Confirm / lost / fade | 2 detections / 1 s / 8 s |
-| Warn | always < 1.0 m; moving < 1.8 m; time-to-contact < 2.5 s up to 4 m |
+| Warn | < 1.0 m (even asleep); moving < 1.8 m; time-to-contact < 2.5 s up to 4 m |
 | Rest / move | still 120 s / > 0.2 m/s for 0.4 s, ends < 0.12 m/s for 1 s |
 | Anchor check | every 180 s, warn > 10 cm twice in a row |
 | Capture | 1 frame per camera every 2 s |
