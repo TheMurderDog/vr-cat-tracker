@@ -76,9 +76,10 @@ With this setup, after training on the cat: all four cameras see it most of the 
 triangulated from two or more cameras, the anchor lines up with SteamVR to about 2 cm, and the detector keeps
 GPU use mostly under 20%.
 
-**Less should work too.** Two cameras is the minimum for triangulation, and one camera still gives a floor
-position. Ordinary room lighting can work, but it needs more exposure, and a light that flickers at the exposure time
-shows as stripes. This hasn't been tested with smaller setups, so try what you have and decide what is good enough.
+**Smaller setups haven't been tested.** You need at least two cameras: the cat's position is worked out where two
+cameras see it. Where only one camera sees it for a moment, the tracker guesses a spot on the floor under its box,
+which is rougher. Ordinary room lighting hasn't been fully tested either: it needs more exposure, and a light that
+flickers at the exposure time shows as stripes. Try what you have and decide what is good enough.
 Settings to tweak are mainly `cameras.exposure_ms`, `detector.gamma` and `detector.score` in
 `settings/cat_tracker.yaml`, plus training on footage from your own cameras.
 
