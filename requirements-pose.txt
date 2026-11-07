@@ -1,8 +1,0 @@
-# OPTIONAL: the pose model (pose/baseline.py), used only to find a person's head (e.g. an anchor
-# that lines the cameras up with the headset). Install after requirements.txt:
-#   pip install -r requirements-pose.txt
-#   pip install --no-deps rtmlib==0.0.16
-# rtmlib goes in with --no-deps because its own requirements would add CPU onnxruntime and a second
-# OpenCV over these. onnxruntime-gpu's [cuda,cudnn] extras bring CUDA 13 and cuDNN 9 as pip
-# packages, so no CUDA Toolkit install is needed, only an NVIDIA driver R580 or newer.
-onnxruntime-gpu[cuda,cudnn]==1.30.0

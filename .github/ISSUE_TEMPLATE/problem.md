@@ -7,7 +7,7 @@ about: Something doesn't work, or a step isn't clear
 anyone in it. Describe what you see in words, or crop a picture so only the problem shows. Copying text from a log is
 fine.
 
-**Which script** (`.bat` file) and what you ran before it:
+**Which step folder and script** (`.bat` file), and what you ran before it:
 
 **What happened, and what you expected:**
 
