@@ -57,6 +57,8 @@ to run it; each one tells you the next step when it finishes.
 - **SteamVR** with your headset, plus a **tracker or controller** to fix to Board B (the marker card) for the room calibration.
 - **Two printed sheets**, included in `0_start_here/print_these` (US Letter or A4): Board A, a checkerboard to glue
   onto something rigid like foam board, and Board B, a marker card to glue onto stiff card.
+- **Bright, flicker-free light** (recommended). It can work without it, but it makes everything easier, labelling
+  most of all. Some LED and fluorescent bulbs flicker on camera; the camera setup in step 1 tries to point that out.
 - **Your cat at home** for about 20 minutes, to teach the tracker what it looks like.
 
 ## Reference setup
