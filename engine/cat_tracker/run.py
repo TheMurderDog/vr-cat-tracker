@@ -192,7 +192,8 @@ def main():
     win = "Cat tracker (q quits, a re-anchors, s saves a snapshot)"
     from tools.window import quit_when_closed
     quit_when_closed(win)  # closing the window quits, as q does
-    cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
+    if not args.headless:  # no window at all: Windows marks a window nobody redraws "Not Responding", and closing it ends the tracker
+        cv2.namedWindow(win, cv2.WINDOW_AUTOSIZE)
 
     voices = []
 

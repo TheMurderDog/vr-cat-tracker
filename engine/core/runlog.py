@@ -18,14 +18,13 @@ TEST_ENV = "CAT_TRACKER_TEST"  # set (to anything) by automated tests
 
 
 def is_test_run(argv=None):
-    """An automated test, not a person using the tool: CAT_TRACKER_TEST is set, or the program wasn't started as a
-    script (a test calling a tool's main() with a made-up argv like ['calib_check', '--quiet']), or the script is a
-    test or probe (test_*.py, probe_*.py)."""
+    """An automated test, not a person using the tool: CAT_TRACKER_TEST is set, or the script is a test or probe
+    (test_*.py, probe_*.py). How the program was started is not a hint: SteamVR's own start looks unusual too."""
     argv = sys.argv if argv is None else argv
     if os.environ.get(TEST_ENV):
         return True
     first = os.path.basename(argv[0]) if argv and argv[0] else ""
-    return not first.lower().endswith((".py", ".pyw")) or first.lower().startswith(("test_", "probe_"))
+    return first.lower().startswith(("test_", "probe_"))
 
 
 def start_run(name, cfg):
