@@ -1,8 +1,15 @@
-# per-machine: never commit calibration results, captured frames, logs or the environment
-.venv/
+# per-machine: never commit the Python environments, or anything in my_data except its README files
+/.venv/
+/.venv-train/
 __pycache__/
 *.pyc
-logs/
-calibration/data/
-# written by setup.bat when you accept the disclaimer
-accepted_disclaimer.txt
+/my_data/*
+!/my_data/README.md
+# written by 5_play_in_vr\start_with_steamvr\install_autostart.bat, with this PC's paths in it
+/engine/cat_tracker/cat_tracker.vrmanifest
+# downloaded by 0_start_here\1_install.bat (tools/get_voice.py)
+/engine/voices/
+
+# test screenshots and Ultralytics downloads in engine/
+/engine/*.png
+/engine/weights/
