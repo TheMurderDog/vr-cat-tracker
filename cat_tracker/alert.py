@@ -1,7 +1,7 @@
 """When to warn you about it, and how it's moving.
 
 Motion follows its speed from the tracked position, so the marker can show a resting or a moving cat.
-Proximity decides the warning: always when it's underfoot, earlier when it (or you) is closing in
+Proximity decides the warning: when it's underfoot (even asleep), earlier when it (or you) is closing in
 fast, and not at all when it's napping a little way off and neither of you is moving toward the other.
 """
 

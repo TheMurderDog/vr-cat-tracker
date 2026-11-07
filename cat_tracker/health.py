@@ -1,5 +1,5 @@
-"""Is the tracker itself working? No marker in VR should only ever mean "no cat", never "the tracker
-stopped looking". Two parts:
+"""Is the tracker itself working? The aim: no marker should mean "no cat seen", not "the tracker stopped looking".
+It can't guarantee that. Two parts:
 
 - Health (in the tracker): notices a camera that stopped sending pictures and a detector that keeps
   failing, so the tracker can show a notice in VR and ignore that camera instead of trusting an old picture.
