@@ -22,6 +22,19 @@ it says why, and you try again.
 Window keys: `q` quits, `a` (or the **REDO ANCHOR WALK** button, top left) redoes the anchor. You can start it
 before putting the headset on: the walk waits for you.
 
+## The app (optional)
+
+A window, a tab in the SteamVR dashboard and a small widget on your wrist, so you can do most things from VR with
+the laser pointer: start and stop the tracker, redo the anchor, see the cameras and a room map of where the cat
+tends to be, change how the marker looks, and tune or snooze the warnings.
+
+1. `app\1_install_app.bat` - once. It adds the app to the same install (a few hundred MB download).
+2. `app\2_open_app.bat` - opens it. With SteamVR running, open the dashboard and pick the cat tab.
+
+If the tracker starts with SteamVR (below), run that install again with SteamVR open after installing the app: then
+the app starts with SteamVR too, and its tab is there whenever the tracker runs. The warnings are an extra hint, not
+a promise: keep the floor clear and look before you step.
+
 ## You're done when
 
 You see the cat icon on your real cat in the headset.
