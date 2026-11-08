@@ -1,7 +1,8 @@
 @echo off
 rem Restarts the cat tracker in the background (no window) with VRChat sending on, e.g. after changing a settings file.
 rem Stops the running one first (like 5_play_in_vr\stop_tracker.bat), waits for it to let go of the cameras, then
-rem starts a new one the way SteamVR does: saved anchor, no window, sending to VRChat. SteamVR must be running.
+rem starts a new one the way SteamVR does: saved anchor, no window, sending to VRChat (and the app's SteamVR tab,
+rem if the app is installed). SteamVR must be running.
 set "TOP=%~dp0.."
 if not exist "%TOP%\.venv\Scripts\python.exe" (
   echo The tracker is not installed yet. Run 0_start_here\1_install.bat first.

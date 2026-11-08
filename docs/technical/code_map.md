@@ -22,7 +22,7 @@ package-absolute (`from core.config import ...`). Modules with an entry point ha
 | `4_teach_it_your_cat\later_rounds\train_more.bat` | `3_train.bat --resume-from-last` | `.venv-train` |
 | `4_teach_it_your_cat\later_rounds\train_big.bat` | `3_train.bat --epochs 100 --patience 30` | `.venv-train` |
 | `4_teach_it_your_cat\later_rounds\check_recording.bat` | `cat_tracker.check_recording` | `.venv` |
-| `5_play_in_vr\run_tracker.bat` | `cat_tracker.run` | `.venv` |
+| `5_play_in_vr\run_tracker.bat` | `cat_app.launch` (`cat_tracker.run`, or with the app installed the app plus `cat_app.bridge`) | `.venv` |
 | `5_play_in_vr\stop_tracker.bat` | writes `my_data\tracker\stop` | none |
 | `5_play_in_vr\restart_tracker.bat` | stop file, then `pythonw engine\cat_tracker\autostart.py --reuse-anchor --headless` | `.venv` |
 | `5_play_in_vr\start_with_steamvr\install_autostart.bat` | `cat_tracker.install_autostart` | `.venv` |
@@ -30,7 +30,7 @@ package-absolute (`from core.config import ...`). Modules with an entry point ha
 | `5_play_in_vr\app\1_install_app.bat` | `pip install -r engine\requirements-app.txt` (PySide6) | `.venv` |
 | `5_play_in_vr\app\2_open_app.bat` | `cat_app.main` | `.venv` |
 | `6_optional_vrchat\2_osc_test.bat` | `cat_tracker.osc_test` | `.venv` |
-| `6_optional_vrchat\3_run_with_vrchat.bat` | `cat_tracker.run --osc --reuse-anchor` | `.venv` |
+| `6_optional_vrchat\3_run_with_vrchat.bat` | `cat_app.launch -- --osc --reuse-anchor` (as `run_tracker.bat`) | `.venv` |
 | `6_optional_vrchat\4_install_autostart_vrchat.bat` | `cat_tracker.install_autostart --osc` | `.venv` |
 | `6_optional_vrchat\restart_with_vrchat.bat` | like `restart_tracker.bat`, plus `--osc` | `.venv` |
 | `7_if_something_moved\drift_check.bat` | `tools.drift_check` | `.venv` |
@@ -97,7 +97,7 @@ saved anchor is always used now.
 | `cat_tracker.half` | makes the half-precision copy of a trained model the tracker runs |
 | `cat_tracker.check_recording` | entry: runs the detector over a photo or an fbt recording |
 | `cat_tracker.install_autostart` | entry: registers or removes the SteamVR startup entry (`cat_tracker.vrmanifest`) |
-| `cat_tracker.autostart` | what SteamVR runs: changes into `engine` and runs `cat_tracker.run` with no window (or `cat_app.bridge` with `--via-app`) |
+| `cat_tracker.autostart` | what SteamVR and the restart scripts run: changes into `engine` and runs `cat_app.launch --background` (the tracker with no window; with the app installed, through `cat_app.bridge` with the app's SteamVR tab) |
 
 ### The app (optional, `engine/cat_app/`, needs PySide6)
 
@@ -105,6 +105,7 @@ saved anchor is always used now.
 | --- | --- |
 | `cat_app.main` | entry: the app window (QML), one copy at a time (a second copy shows the first one's window); `--background` (started by SteamVR: no window until asked, quits with SteamVR), `--demo`, `--no-vr` |
 | `cat_app.autostart` | what SteamVR runs for the app: `cat_app.main --background` |
+| `cat_app.launch` | entry: starts the tracker for VR, and the app with it when it's installed (`--background`: SteamVR tab only, messages to `bridge.log`; `--no-app`); without PySide6 it runs `cat_tracker.run` as before. No Qt imports |
 | `cat_app.backend` | what the QML sees: tracker status, buttons, settings, the camera picture and heatmap; starts the tracker through `cat_app.bridge` |
 | `cat_app.link` | the app-tracker link: named shared memory blocks (status, frame, heatmap, requests), standard library only, no network |
 | `cat_app.bridge` | entry: runs the unchanged `cat_tracker.run` in the same process with hooks (window picture, keys, alerts, marker look, heatmap) and serves it over `cat_app.link` |

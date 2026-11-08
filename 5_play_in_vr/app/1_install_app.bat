@@ -26,8 +26,8 @@ cd /d "%TOP%"
 if not "%errorlevel%"=="0" goto fail
 echo.
 echo The app is installed.
-echo Next: 2_open_app.bat. If the tracker starts with SteamVR, run its install_autostart (or
-echo 6_optional_vrchat\4_install_autostart_vrchat.bat) again with SteamVR open, so the app starts with it.
+echo From now on it opens by itself whenever the tracker starts (run_tracker.bat, the VRChat launchers,
+echo the restart scripts and the SteamVR autostart). To open it on its own: 2_open_app.bat.
 echo This window closes in 30 seconds. Press any key to close it now.
 timeout /t 30 >nul
 exit /b 0

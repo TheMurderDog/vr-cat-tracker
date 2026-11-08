@@ -709,10 +709,12 @@ def main():
     ap = argparse.ArgumentParser(description="Runs the cat tracker for the Cat Tracker app")
     ap.add_argument("--log", default=str(resolve_path("my_data/logs/cat_app/bridge.log")),
                     help="where this script's own messages go (the tracker's log is in my_data/logs/cat_tracker)")
+    ap.add_argument("--console", action="store_true", help="messages to this console instead of --log")
     args = ap.parse_args(argv)
-    Path(args.log).parent.mkdir(parents=True, exist_ok=True)
-    f = open(args.log, "a", encoding="utf-8", buffering=1)  # noqa: SIM115
-    sys.stdout = sys.stderr = f
+    if not args.console:
+        Path(args.log).parent.mkdir(parents=True, exist_ok=True)
+        f = open(args.log, "a", encoding="utf-8", buffering=1)  # noqa: SIM115
+        sys.stdout = sys.stderr = f
     print(f"\n==== {time.strftime('%Y-%m-%d %H:%M:%S')} tracker for the app, options: {' '.join(passthrough)}")
 
     if "--headless" in passthrough:

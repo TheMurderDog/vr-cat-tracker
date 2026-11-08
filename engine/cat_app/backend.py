@@ -415,8 +415,8 @@ class Backend(QObject):
         s = self._status
         if not self._connected:
             if self.otherTracker:
-                return ("It was started without the app (run_tracker.bat, or an autostart set up before the app was "
-                        "installed). Press Stop background tracker, then Start, to run it from here.")
+                return ("It was started without the app (the desktop test, a capture, or with --no-app). "
+                        "Press Stop background tracker, then Start, to run it from here.")
             if self.starting:
                 return "Opening the cameras and loading the model takes a few seconds."
             return "Press Start. SteamVR should be running first, so the cat can be shown in VR."
