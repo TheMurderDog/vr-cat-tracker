@@ -19,7 +19,24 @@ def main():
     assert verdict(hb, 7, True, 15, 116.0) == "frozen", "a real freeze still shows after hang_s"
     assert verdict(steady(None, None), 7, True, 15, 101.0) == "frozen", "no heartbeat at all: as before"
     assert verdict(hb, 7, False, 15, 101.0) == "stopped", "the process gone: as before"
-    print("ok: watchdog ignores a single failed heartbeat read")
+    # a known slow step (grace_until) waits longer, then the normal limit applies again
+    slow = {"pid": 7, "t": 100.0, "state": "running", "grace_until": 130.0}
+    assert verdict(slow, 7, True, 3, 120.0) == "ok"
+    assert verdict(slow, 7, True, 3, 131.0) == "frozen"
+    assert verdict(good, 7, True, 3, 103.5) == "frozen", "3 s with no heartbeat: frozen"
+    # the tracker's side writes grace_until only while it lasts
+    import json, tempfile, time
+    from cat_tracker.health import Heartbeat
+    hbf = Path(tempfile.mkdtemp()) / "heartbeat.json"
+    beat = Heartbeat(hbf)
+    beat.beat(force=True)
+    assert "grace_until" not in json.loads(hbf.read_text())
+    beat.busy(20)
+    assert json.loads(hbf.read_text())["grace_until"] > time.time() + 19
+    beat.grace_until = time.time() - 1
+    beat.beat(force=True)
+    assert "grace_until" not in json.loads(hbf.read_text())
+    print("ok: watchdog ignores a single failed heartbeat read, waits longer only for known slow steps")
 
 
 if __name__ == "__main__":

@@ -236,7 +236,7 @@ Paths are relative to the top folder unless absolute.
 | `health.camera_stale_s` | `2.0` | a camera with no new picture for this long: a notice in VR, and its old picture is ignored |
 | `health.detector_fail_s` | `3.0` | detection failing for this long: a notice in VR |
 | `health.watchdog` | `true` | a small separate process (engine\cat_tracker\watchdog.py) that shows "CAT TRACKER STOPPED" in VR and buzzes the controllers if the tracker crashes, is killed or freezes |
-| `health.hang_s` | `15` | no sign of life from the tracker for this long counts as frozen |
+| `health.hang_s` | `3` | no sign of life from the tracker for this long counts as frozen. The heartbeat is written twice a second; known slow steps (the first detections, loading the pose model for the anchor check) tell the watchdog to wait longer. A notice stays up at least 4 s so it can be read. Updates slower than 1 s are logged as "Slow update" |
 | `hard_frames` |  | saves moments the model struggled with, for the next training round (see hardframes.py) |
 | `hard_frames.enabled` | `true` | only when 2+ cameras are sure of it and another camera that should see it didn't |
 | `hard_frames.every_s` | `3.0` | at most one moment (4 images) this often |

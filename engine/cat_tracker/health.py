@@ -65,14 +65,20 @@ class Health:
 
 
 class Heartbeat:
-    """Writes my_data/tracker/heartbeat.json about once a second while the tracker runs, and
-    "stopped" when it closes on purpose. The watchdog reads it."""
+    """Writes my_data/tracker/heartbeat.json twice a second while the tracker runs, and "stopped" when it
+    closes on purpose. The watchdog reads it. busy(s) tells the watchdog that a known slow step (the first
+    detection, loading the pose model) may hold the tracker up for up to s seconds."""
 
-    def __init__(self, path, every_s=1.0):
+    def __init__(self, path, every_s=0.5):
         self.path = Path(path)
         self.every_s = every_s
         self.last = 0.0
+        self.grace_until = 0.0
         self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def busy(self, seconds):
+        self.grace_until = max(self.grace_until, time.time() + float(seconds))
+        self.beat(force=True)
 
     def beat(self, force=False):
         now = time.monotonic()
@@ -86,7 +92,11 @@ class Heartbeat:
     def _write(self, state):
         tmp = self.path.with_suffix(".tmp")
         try:
-            tmp.write_text(json.dumps({"pid": os.getpid(), "t": time.time(), "state": state}), encoding="utf-8")
+            now = time.time()
+            hb = {"pid": os.getpid(), "t": now, "state": state}
+            if self.grace_until > now:
+                hb["grace_until"] = self.grace_until
+            tmp.write_text(json.dumps(hb), encoding="utf-8")
             os.replace(tmp, self.path)
         except OSError:  # the watchdog may be reading it this instant (Windows); the next beat will do
             pass
