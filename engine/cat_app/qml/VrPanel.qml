@@ -46,8 +46,9 @@ Rectangle {
                     BigButton {
                         Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k; primary: true
                         text: backend.connected ? "Stop tracker" : (backend.otherTracker ? "Stop background tracker" : "Start tracker")
+                        hint: (backend.connected || backend.otherTracker) ? "" : (backend.startOsc ? "Sends to VRChat" : "VRChat off (change it on the desktop)")
                         enabled: !backend.starting
-                        onClicked: (backend.connected || backend.otherTracker) ? backend.stop() : backend.start(true, false)
+                        onClicked: (backend.connected || backend.otherTracker) ? backend.stop() : backend.startFromVr()
                     }
                     BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
                                 text: "Re-anchor"; primary: backend.anchorNeeded

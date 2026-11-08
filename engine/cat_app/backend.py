@@ -486,10 +486,29 @@ class Backend(QObject):
         self._ask["cmds"].append([time.time_ns(), cmd])
         self._write_ask(force=True)
 
+    @Property(bool, notify=settingsChanged)
+    def startOsc(self):
+        """Whether Start sends to VRChat: the last choice made on the desktop window, else what the SteamVR
+        autostart uses (6_optional_vrchat\\4_install_autostart_vrchat.bat adds --osc)."""
+        v = self._settings.get("start_osc")
+        if isinstance(v, bool):
+            return v
+        try:
+            return "--osc" in (ENGINE / "cat_tracker" / "cat_tracker.vrmanifest").read_text(encoding="utf-8")
+        except OSError:
+            return False
+
+    @Slot()
+    def startFromVr(self):
+        """The VR tab's Start: the saved anchor, and VRChat on or off as last chosen (it has no tick boxes)."""
+        self.start(False, self.startOsc)
+
     @Slot(bool, bool)
     def start(self, new_anchor=False, osc=False):
         if self._connected:
             return
+        if bool(osc) != self.startOsc or self._settings.get("start_osc") is None:
+            self.setSetting("start_osc", bool(osc))
         if self._heartbeat():
             self._say("Another cat tracker is already running (it has the cameras). Press Stop first.")
             return
