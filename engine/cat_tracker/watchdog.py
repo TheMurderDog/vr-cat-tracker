@@ -58,6 +58,13 @@ def read_heartbeat(path=HEARTBEAT):
         return None
 
 
+def steady(hb, last):
+    """The heartbeat to judge by: this read, or the last good one if this read failed. On Windows a read can
+    fail at the moment the tracker replaces the file, which showed the frozen notice for one check (half a
+    second). A real freeze still shows: the last good heartbeat gets older than hang_s like any other."""
+    return last if hb is None else hb
+
+
 def verdict(hb, pid, alive, hang_s, now):
     """What to do, from the heartbeat and whether the tracker process is alive:
     "exit" (closed on purpose, or a newer tracker took over), "stopped", "frozen" or "ok"."""
@@ -106,13 +113,15 @@ def main():
     T = np.eye(4)
     T[:3, 3] = [0.0, -0.1, -1.2]  # a little below the middle of your view, 1.2 m away
     shown = None
+    hb = None
     try:
         while True:
             if vr.quit_requested():
                 log.info("SteamVR is closing")
                 break
             vr.update_input()
-            v = verdict(read_heartbeat(), args.pid, pid_alive(args.pid), args.hang_s, time.time())
+            hb = steady(read_heartbeat(), hb)
+            v = verdict(hb, args.pid, pid_alive(args.pid), args.hang_s, time.time())
             if v == "exit":
                 log.info("The tracker closed normally, or a new one started; done")
                 break
