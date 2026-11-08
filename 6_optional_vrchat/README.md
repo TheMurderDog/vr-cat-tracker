@@ -23,7 +23,8 @@ Let friends in VRChat see a stand-in cat on your avatar, where your real cat is.
 3. `3_run_with_vrchat.bat` - runs the tracker and sends your cat to the avatar.
 4. `4_install_autostart_vrchat.bat` (optional) - does that by itself every time SteamVR starts. Run it with SteamVR
    open. It replaces step 5's autostart if you installed that. Undo with
-   `5_play_in_vr\start_with_steamvr\remove_autostart.bat`.
+   `5_play_in_vr\start_with_steamvr\remove_autostart.bat`. If you installed the app
+   ([5_play_in_vr](../5_play_in_vr/README.md#the-app-optional)), it starts with SteamVR too.
 
 `restart_with_vrchat.bat` restarts it with no window, for example after changing a setting.
 

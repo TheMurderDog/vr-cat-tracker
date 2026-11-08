@@ -1,0 +1,48 @@
+{
+  "default_bindings": [
+    {
+      "controller_type": "knuckles",
+      "binding_url": "bindings_knuckles.json"
+    },
+    {
+      "controller_type": "oculus_touch",
+      "binding_url": "bindings_oculus_touch.json"
+    },
+    {
+      "controller_type": "vive_controller",
+      "binding_url": "bindings_vive_controller.json"
+    },
+    {
+      "controller_type": "holographic_controller",
+      "binding_url": "bindings_holographic_controller.json"
+    },
+    {
+      "controller_type": "generic",
+      "binding_url": "bindings_generic.json"
+    }
+  ],
+  "actions": [
+    {
+      "name": "/actions/catapp/in/grab",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/catapp/in/resize",
+      "type": "vector2"
+    }
+  ],
+  "action_sets": [
+    {
+      "name": "/actions/catapp",
+      "usage": "leftright"
+    }
+  ],
+  "localization": [
+    {
+      "language_tag": "en_US",
+      "/actions/catapp": "Cat Tracker app",
+      "/actions/catapp/in/grab": "Grab the wrist widget",
+      "/actions/catapp/in/resize": "Resize the wrist widget while holding it"
+    }
+  ]
+}

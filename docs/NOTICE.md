@@ -83,3 +83,14 @@ Also written for this project; no code copied from elsewhere. Extra dependencies
 
 The YOLO11 model weights (`yolo11s.pt`, downloaded by Ultralytics) are AGPL-3.0. No model files are included.
 Ultralytics' anonymous usage events are switched off in this project's processes (see SECURITY.md).
+
+## The app (`engine/cat_app/`)
+
+Also written for this project; no code copied from elsewhere. It's optional (`5_play_in_vr\app\1_install_app.bat`)
+and adds one package to the tracker's `.venv`:
+
+| Package | Used for | License |
+| --- | --- | --- |
+| PySide6-Essentials 6.12.0 (Qt for Python, with the Qt libraries it includes) | the window, the SteamVR dashboard tab and the wrist widget | LGPL-3.0 (also offered under GPL-2.0/GPL-3.0 or a commercial license); installed with pip as separate libraries, not copied into this repository |
+
+The app also uses openvr, numpy and opencv-python from the list above.

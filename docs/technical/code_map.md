@@ -27,6 +27,8 @@ package-absolute (`from core.config import ...`). Modules with an entry point ha
 | `5_play_in_vr\restart_tracker.bat` | stop file, then `pythonw engine\cat_tracker\autostart.py --reuse-anchor --headless` | `.venv` |
 | `5_play_in_vr\start_with_steamvr\install_autostart.bat` | `cat_tracker.install_autostart` | `.venv` |
 | `5_play_in_vr\start_with_steamvr\remove_autostart.bat` | `cat_tracker.install_autostart --remove` | `.venv` |
+| `5_play_in_vr\app\1_install_app.bat` | `pip install -r engine\requirements-app.txt` (PySide6) | `.venv` |
+| `5_play_in_vr\app\2_open_app.bat` | `cat_app.main` | `.venv` |
 | `6_optional_vrchat\2_osc_test.bat` | `cat_tracker.osc_test` | `.venv` |
 | `6_optional_vrchat\3_run_with_vrchat.bat` | `cat_tracker.run --osc --reuse-anchor` | `.venv` |
 | `6_optional_vrchat\4_install_autostart_vrchat.bat` | `cat_tracker.install_autostart --osc` | `.venv` |
@@ -95,7 +97,24 @@ saved anchor is always used now.
 | `cat_tracker.half` | makes the half-precision copy of a trained model the tracker runs |
 | `cat_tracker.check_recording` | entry: runs the detector over a photo or an fbt recording |
 | `cat_tracker.install_autostart` | entry: registers or removes the SteamVR startup entry (`cat_tracker.vrmanifest`) |
-| `cat_tracker.autostart` | what SteamVR runs: changes into `engine` and runs `cat_tracker.run` with no window |
+| `cat_tracker.autostart` | what SteamVR runs: changes into `engine` and runs `cat_tracker.run` with no window (or `cat_app.bridge` with `--via-app`) |
+
+### The app (optional, `engine/cat_app/`, needs PySide6)
+
+| Module | What it does |
+| --- | --- |
+| `cat_app.main` | entry: the app window (QML), one copy at a time (a second copy shows the first one's window); `--background` (started by SteamVR: no window until asked, quits with SteamVR), `--demo`, `--no-vr` |
+| `cat_app.autostart` | what SteamVR runs for the app: `cat_app.main --background` |
+| `cat_app.backend` | what the QML sees: tracker status, buttons, settings, the camera picture and heatmap; starts the tracker through `cat_app.bridge` |
+| `cat_app.link` | the app-tracker link: named shared memory blocks (status, frame, heatmap, requests), standard library only, no network |
+| `cat_app.bridge` | entry: runs the unchanged `cat_tracker.run` in the same process with hooks (window picture, keys, alerts, marker look, heatmap) and serves it over `cat_app.link` |
+| `cat_app.vr_dashboard` | the SteamVR dashboard tab: draws the QML offscreen and hands it to SteamVR, laser-pointer input |
+| `cat_app.wrist` | the wrist widget overlay and its SteamVR Input actions (`input/*.json`) |
+| `cat_app.d3d11_texture` | puts a picture on SteamVR's GPU as a D3D11 texture (Windows, ctypes) |
+| `cat_app.app_settings` | the app's own settings (`my_data/app/app_settings.json`): alert tuning, snooze length, wrist widget |
+| `cat_app.marker_style` | the marker look (colour, shade, size, opacity) and the recoloured icons |
+| `cat_app.extras` | heatmap, rising buzz steps, snooze and capture helpers (pure logic) |
+| `cat_app.perf` | CPU and frame-time numbers for `my_data/logs/cat_app/perf.log` |
 
 Data files in the package: `assets/*.png` (overlay images) and `input/*.json` (SteamVR Input actions and controller
 bindings for the buzz).

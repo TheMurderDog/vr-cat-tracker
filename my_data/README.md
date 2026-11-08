@@ -11,7 +11,8 @@ none of it is ever sent anywhere.
 | `training` | the training data set and every training run (big; safe to delete between rounds) | step 4 |
 | `backups` | the old `settings\cat_tracker.yaml`, copied each time training switches it to a new model | step 4 |
 | `tracker` | the anchor (`anchor.json`) and small files the running tracker uses to talk to its watchdog | step 5 |
-| `logs` | a log for every run, and snapshots (`cameras` for steps 1, 2 and 7, `cat_tracker` for the tracker) | every step |
+| `app` | the optional app's settings (alerts, marker look), the room heatmap and pictures it draws for VR | step 5 (the app) |
+| `logs` | a log for every run, and snapshots (`cameras` for steps 1, 2 and 7, `cat_tracker` for the tracker, `cat_app` for the app) | every step |
 
 - **Back up your setup:** copy this folder and the `settings` folder.
 - **Start over:** delete this folder (keep this README if you like). Delete only `calibration` to redo step 2, or only

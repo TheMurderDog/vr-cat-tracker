@@ -17,6 +17,8 @@ finds `settings` and `my_data` from `REPO_ROOT`, not from the working folder.
 | `.venv` | `0_start_here\1_install.bat` | `engine/requirements.txt` (OpenCV, NumPy, SciPy, PyYAML, openvr) and `requirements-pose.txt` (onnxruntime-gpu with CUDA and cuDNN), plus rtmlib with `--no-deps` | every script except training |
 | `.venv-train` | `engine\make_train_env.bat` (from `1_get_stock_model.bat` or `3_train.bat`) | PyTorch 2.14.1 and torchvision (CUDA 13), `engine/cat_tracker/requirements-train.txt` (Ultralytics and ONNX tools) | `1_get_stock_model.bat`, `3_train.bat` and `later_rounds` |
 
+The optional app (`5_play_in_vr\app\1_install_app.bat`) adds `engine/requirements-app.txt` (PySide6-Essentials) to `.venv`.
+
 Both are safe to delete; running the script that made them makes them again. Neither is in git.
 
 `engine/voices/` holds the calibration voice (`en_US-ljspeech-medium.onnx` and `.onnx.json`, about 61 MB), downloaded by
@@ -61,6 +63,10 @@ Everything made on the PC. Not in git except `my_data/README.md`.
 | `tracker/heartbeat.json`, `tracker/stop`, `tracker/notice_*.png` | the tracker, `stop_tracker.bat`, the watchdog | the tracker and watchdog | yes, when nothing is running |
 | `logs/cameras/` | steps 1, 2 and 7 (`logging` in `cameras.yaml`) | you | yes |
 | `logs/cat_tracker/` (incl. `snapshots/`, `watchdog.log`, `autostart_error.txt`) | the tracker and its tools (`logging` in `cat_tracker.yaml`) | you | yes |
+| `app/app_settings.json`, `app/marker_style.json` | the app (`5_play_in_vr\app`), when you change an alert or the marker look there | the app and the tracker started through it (`cat_app.bridge`) | yes: back to the defaults |
+| `app/heatmap.json` | the tracker started through the app, every few seconds | the app's room map | yes: the map starts empty |
+| `app/styled/*.png`, `app/snooze.png`, `app/vr_tab/`, `app/wrist.png`, `app/cat_tracker_app.vrmanifest` | the app and `cat_app.bridge` (recoloured icons, the VR tab's and wrist's pictures, a SteamVR Input manifest used when the app isn't registered with SteamVR) | the same | yes, when the app isn't running |
+| `logs/cat_app/` (`app.log`, `bridge.log`, `freeze.log`, `perf.log`, `autostart_error.txt`) | the app and `cat_app.bridge` | you | yes |
 | `recordings/` | nothing here: `check_recording.bat --session` looks for fbt recordings in it | `check_recording.bat` | n/a |
 
 ### A capture session
@@ -80,6 +86,8 @@ Calibration JSON formats and coordinate frames: [FORMATS.md](FORMATS.md).
 
 - **SteamVR**: `install_autostart.bat` registers `engine/cat_tracker/cat_tracker.vrmanifest` (written next to the
   code, with this PC's paths in it, not in git) as a startup overlay app with the key `camera_core.cat_tracker`.
-  `remove_autostart.bat` unregisters it.
+  `remove_autostart.bat` unregisters it. When the app is installed, the same file also holds a second entry,
+  `camera_core.cat_tracker_app` (the app with its dashboard tab), and the tracker entry starts the tracker through
+  `cat_app.bridge` so the app can show it. `--no-app` leaves the app out.
 - **rtmlib** downloads the pose model to `~/.cache/rtmlib` on first use (URLs under `pose` in `cameras.yaml`).
 - **pip** keeps its usual download cache.

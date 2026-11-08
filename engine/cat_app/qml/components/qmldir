@@ -1,0 +1,13 @@
+singleton Theme 1.0 Theme.qml
+BigButton 1.0 BigButton.qml
+StatusBanner 1.0 StatusBanner.qml
+RoomMap 1.0 RoomMap.qml
+StyleEditor 1.0 StyleEditor.qml
+Stepper 1.0 Stepper.qml
+CameraChips 1.0 CameraChips.qml
+Segmented 1.0 Segmented.qml
+Section 1.0 Section.qml
+AlertsPanel 1.0 AlertsPanel.qml
+MapPanel 1.0 MapPanel.qml
+WidgetPanel 1.0 WidgetPanel.qml
+SnoozePanel 1.0 SnoozePanel.qml
