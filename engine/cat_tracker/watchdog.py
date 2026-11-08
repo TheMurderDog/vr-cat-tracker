@@ -6,13 +6,14 @@ watches it through my_data/tracker/heartbeat.json and its process id:
 
   - the tracker closes on purpose (q, stop_tracker.bat, SteamVR closing): it writes "stopped", and
     this quietly exits too;
-  - the tracker's process is gone without that, or its heartbeat is older than hang_s: a notice
-    "Cat tracker stopped" in front of you, and one buzz pattern;
+  - the tracker's process is gone without that, or its heartbeat is older than hang_s (longer while it
+    says a slow step is running: grace_until): a notice "Cat tracker stopped" in front of you, and one
+    buzz pattern;
   - the notice stays until the tracker runs again (restart_tracker.bat or run_tracker.bat), you run
-    stop_tracker.bat, or SteamVR closes.
+    stop_tracker.bat, or SteamVR closes; after a short freeze it stays at least MIN_SHOW_S, so it can be read.
 
 Started by run.py (health.watchdog in settings/cat_tracker.yaml); not meant to be run by hand.
-  python -m cat_tracker.watchdog --pid 1234 [--hang-s 15]
+  python -m cat_tracker.watchdog --pid 1234 [--hang-s 3]
 """
 
 import argparse
@@ -58,6 +59,16 @@ def read_heartbeat(path=HEARTBEAT):
         return None
 
 
+MIN_SHOW_S = 4.0  # a notice stays up at least this long, so a short freeze's notice can be read
+
+
+def steady(hb, last):
+    """The heartbeat to judge by: this read, or the last good one if this read failed. On Windows a read can
+    fail at the moment the tracker replaces the file, which showed the frozen notice for one check (half a
+    second). A real freeze still shows: the last good heartbeat gets older than hang_s like any other."""
+    return last if hb is None else hb
+
+
 def verdict(hb, pid, alive, hang_s, now):
     """What to do, from the heartbeat and whether the tracker process is alive:
     "exit" (closed on purpose, or a newer tracker took over), "stopped", "frozen" or "ok"."""
@@ -67,7 +78,7 @@ def verdict(hb, pid, alive, hang_s, now):
         return "exit"
     if not alive:
         return "stopped"
-    if hb is None or now - float(hb.get("t", 0)) > hang_s:
+    if hb is None or now > max(float(hb.get("t", 0)) + hang_s, float(hb.get("grace_until", 0) or 0)):
         return "frozen"
     return "ok"
 
@@ -75,7 +86,7 @@ def verdict(hb, pid, alive, hang_s, now):
 def main():
     ap = argparse.ArgumentParser(description="Cat tracker watchdog")
     ap.add_argument("--pid", type=int, required=True)
-    ap.add_argument("--hang-s", type=float, default=15.0)
+    ap.add_argument("--hang-s", type=float, default=3.0)
     ap.add_argument("--no-buzz", action="store_true")
     args = ap.parse_args()
     log_dir = HERE.parent.parent / "my_data" / "logs" / "cat_tracker"
@@ -106,13 +117,16 @@ def main():
     T = np.eye(4)
     T[:3, 3] = [0.0, -0.1, -1.2]  # a little below the middle of your view, 1.2 m away
     shown = None
+    shown_at = 0.0
+    hb = None
     try:
         while True:
             if vr.quit_requested():
                 log.info("SteamVR is closing")
                 break
             vr.update_input()
-            v = verdict(read_heartbeat(), args.pid, pid_alive(args.pid), args.hang_s, time.time())
+            hb = steady(read_heartbeat(), hb)
+            v = verdict(hb, args.pid, pid_alive(args.pid), args.hang_s, time.time())
             if v == "exit":
                 log.info("The tracker closed normally, or a new one started; done")
                 break
@@ -124,11 +138,12 @@ def main():
                     if shown is None and not args.no_buzz:
                         vr.buzz_pattern("LRLRLR", 1.5, 0.2, 0.8)
                     shown = v
+                    shown_at = time.monotonic()
                 if STOP.exists():  # stop_tracker.bat with no tracker left to read it: hide and finish
                     STOP.unlink(missing_ok=True)
                     log.info("Dismissed with stop_tracker.bat")
                     break
-            elif shown is not None:  # it came back from a freeze
+            elif shown is not None and time.monotonic() - shown_at >= MIN_SHOW_S:  # it came back from a freeze
                 log.info("Tracker responding again")
                 vr.place_on_head("watchdog", None, 0)
                 shown = None

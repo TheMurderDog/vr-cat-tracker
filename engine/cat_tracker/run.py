@@ -254,6 +254,7 @@ def main():
         return (cv2.waitKey(1) & 0xFF) not in (ord("q"), 27)
 
     def do_anchor(keeping=False):
+        heartbeat.busy(30)  # the pose model loads before the walk's own heartbeats start
         T, why = anc.run(cfg, cams, rig, vr, log, show_anchor, voice_say)
         if T is not None:
             voice_say("Anchor saved. The cat's marker is lined up with your headset now.")
@@ -346,9 +347,9 @@ def main():
     stop_file.unlink(missing_ok=True)
     loops = 0
     close = False  # from the last update, used to pick the detection rate
-    heartbeat.beat(force=True)
+    heartbeat.busy(20)  # the first detections can be slow (the GPU warming up)
     if vr is not None and hc_.get("watchdog", True):
-        start_watchdog(float(hc_.get("hang_s", 15)), bool(al.get("buzz", True)), log)
+        start_watchdog(float(hc_.get("hang_s", 3)), bool(al.get("buzz", True)), log)
     clean = False  # set when we stop on purpose; anything else (a crash) leaves the watchdog to warn you
     shown_notice = None
     pos, state, alpha = None, "hidden", 0.0
@@ -451,6 +452,8 @@ def main():
                     motion.update(None, now)
                 heading.update(pos if state == "seen" else None, now, gone=state == "hidden")
                 if check is not None:
+                    if check.on and check.models is None and raw_to_cam is not None and now >= check.next_at:
+                        heartbeat.busy(30)  # this step loads the pose model first (a few seconds, once)
                     T = check.step(items, rig, vr, raw_to_cam, now)
                     if T is not None:  # it quietly corrected the anchor (and saved it)
                         raw_to_cam, cam_to_raw = T, np.linalg.inv(T)
@@ -638,7 +641,10 @@ def main():
                     log.info("Asked to stop (stop_tracker.bat)")
                     clean = True
                     break
-            spare = period - (time.perf_counter() - tick)
+            took = time.perf_counter() - tick
+            if took > 1.0 and loops > 20:  # (for tuning health.hang_s: the watchdog's limit)
+                log.warning("Slow update: %.1f s", took)
+            spare = period - took
             if spare > 0:
                 time.sleep(spare)
     except KeyboardInterrupt:  # Ctrl+C in the console counts as closing it on purpose
