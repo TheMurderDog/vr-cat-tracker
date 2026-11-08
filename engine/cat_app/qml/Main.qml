@@ -244,7 +244,7 @@ ApplicationWindow {
                                 text: "Start SteamVR first, then press Start on the Home page. The first time, the tracker asks you to put the "
                                       + "headset on and walk slowly around the room (the anchor): clear the floor first.\n\n"
                                       + "In VR, open the SteamVR dashboard and choose the cat tab at the bottom. Point with a controller's laser and pull the trigger to press a button.\n\n"
-                                      + "A tracker started without the app (run_tracker.bat) has the cameras: press \"Stop background tracker\", then Start.\n\n"
+                                      + "A tracker started without the app (the desktop test, a capture) has the cameras: press \"Stop background tracker\", then Start.\n\n"
                                       + "It's a hobby project, not a safety device: the cat's marker shows where the cameras think it is, and it can miss the cat. "
                                       + "See 0_start_here\\DISCLAIMER.md."
                             }

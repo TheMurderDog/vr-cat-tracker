@@ -9,6 +9,7 @@ startup overlay apps, where it can be switched off too.
 
 With the Cat Tracker app installed (5_play_in_vr/app/1_install_app.bat), the tracker runs through cat_app.bridge so the
 app can see it, and the app starts too, with no window: its tab in the SteamVR dashboard. Both close with SteamVR.
+(If the app is installed later, the tracker finds it by itself next time: see cat_app.launch.)
 """
 
 import importlib.util
@@ -34,7 +35,8 @@ def app_installed():
 def main():
     args = sys.argv[1:]
     remove = "--remove" in args
-    with_app = "--no-app" not in args and app_installed()
+    no_app = "--no-app" in args
+    with_app = not no_app and app_installed()
     args = [a for a in args if a not in ("--remove", "--no-app")]
     try:
         openvr.init(openvr.VRApplication_Utility)
@@ -60,7 +62,7 @@ def main():
             "app_key": APP_KEY,
             "launch_type": "binary",
             "binary_path_windows": str(pythonw),
-            "arguments": " ".join([f'"{HERE / "autostart.py"}"'] + (["--via-app"] if with_app else []) + tracker_args),
+            "arguments": " ".join([f'"{HERE / "autostart.py"}"'] + (["--no-app"] if no_app else []) + tracker_args),
             "is_dashboard_overlay": True,
             "action_manifest_path": str(HERE / "input" / "actions.json"),
             "strings": {"en_us": {"name": "Cat tracker",

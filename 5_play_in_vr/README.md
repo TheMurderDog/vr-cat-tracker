@@ -20,7 +20,8 @@ and stops by itself when it has enough (usually 20 to 40 seconds). This lines th
 it says why, and you try again.
 
 Window keys: `q` quits, `a` (or the **REDO ANCHOR WALK** button, top left) redoes the anchor. You can start it
-before putting the headset on: the walk waits for you.
+before putting the headset on: the walk waits for you. With [the app](#the-app-optional) installed, the app opens
+instead of that window: use its **Stop** and **Re-anchor** buttons.
 
 ## The app (optional)
 
@@ -31,9 +32,9 @@ tends to be, change how the marker looks, and tune or snooze the warnings.
 1. `app\1_install_app.bat` - once. It adds the app to the same install (a few hundred MB download).
 2. `app\2_open_app.bat` - opens it. With SteamVR running, open the dashboard and pick the cat tab.
 
-If the tracker starts with SteamVR (below), run that install again with SteamVR open after installing the app: then
-the app starts with SteamVR too, and its tab is there whenever the tracker runs. The warnings are an extra hint, not
-a promise: keep the floor clear and look before you step.
+Once it's installed, the app opens by itself however the tracker starts: `run_tracker.bat`,
+`6_optional_vrchat\3_run_with_vrchat.bat`, the restart scripts and the SteamVR autostart. The warnings are an extra
+hint, not a promise: keep the floor clear and look before you step.
 
 ## You're done when
 

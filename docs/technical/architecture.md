@@ -81,11 +81,11 @@ moments the detector got partly wrong.
 
 | Process | Started by | What it does |
 | --- | --- | --- |
-| tracker (`cat_tracker.run`) | `run_tracker.bat`, `3_run_with_vrchat.bat`, `2_desktop_test.bat`, `1_capture.bat`, or SteamVR via `autostart.py` | everything above |
+| tracker (`cat_tracker.run`) | `2_desktop_test.bat`, `1_capture.bat`; without the app also `run_tracker.bat`, `3_run_with_vrchat.bat`, or SteamVR via `autostart.py` | everything above |
 | watchdog (`cat_tracker.watchdog`) | the tracker, as a detached process, when SteamVR is in use and `health.watchdog` is on | watches the tracker's process id and `my_data/tracker/heartbeat.json`; if the tracker dies or freezes for `health.hang_s`, shows "CAT TRACKER STOPPED" in VR and buzzes |
-| autostart (`engine/cat_tracker/autostart.py`) | SteamVR, registered by `install_autostart.bat` | changes into `engine` and runs the tracker with `--reuse-anchor --headless` plus the saved extra arguments |
-| app (`cat_app.main`, optional) | `5_play_in_vr\app\2_open_app.bat`, or SteamVR via `engine/cat_app/autostart.py` (`--background`) when the app was installed before `install_autostart.bat` ran | the window, the SteamVR dashboard tab and the wrist widget; one copy at a time |
-| tracker through the app (`cat_app.bridge`) | the app's START button, or SteamVR's tracker entry (`autostart.py --via-app`) when the app is installed | runs `cat_tracker.run` unchanged in the same process, with hooks that send its picture and state to the app and take its buttons |
+| autostart (`engine/cat_tracker/autostart.py`) | SteamVR, registered by `install_autostart.bat` | changes into `engine` and runs `cat_app.launch --background` with `--reuse-anchor --headless` plus the saved extra arguments |
+| app (`cat_app.main`, optional) | `5_play_in_vr\app\2_open_app.bat`, `cat_app.launch` (whenever the tracker starts), or SteamVR via `engine/cat_app/autostart.py` (`--background`) | the window, the SteamVR dashboard tab and the wrist widget; one copy at a time |
+| tracker through the app (`cat_app.bridge`) | the app's START button, or, when the app is installed, `run_tracker.bat`, `3_run_with_vrchat.bat`, the restart scripts and SteamVR's tracker entry (all through `cat_app.launch`, which also opens the app) | runs `cat_tracker.run` unchanged in the same process, with hooks that send its picture and state to the app and take its buttons |
 
 **Stopping.** `stop_tracker.bat` writes `my_data/tracker/stop`. The tracker checks for it about once a second,
 deletes it and closes cleanly, telling the watchdog it stopped on purpose. The restart scripts write the same file,
@@ -95,8 +95,8 @@ is showing its notice and no tracker is left, the stop file hides the notice. Cl
 **The app and the tracker.** They share no window and no port: `cat_app.link` uses a few named shared memory
 blocks. The tracker side writes its status about once a second (more often, and the camera picture and heatmap,
 only while the app asks), and reads the app's requests and button presses. Either can start or stop at any time;
-the app shows "not running" when the status stops changing for 3 seconds. A tracker started without the app (for
-example `run_tracker.bat`) isn't visible to it, but the app's STOP button still stops it through the stop file.
+the app shows "not running" when the status stops changing for 3 seconds. A tracker started without the app (with
+`--no-app`, or before the app was installed) isn't visible to it, but the app's STOP button still stops it through the stop file.
 
 **Health.** Inside the tracker, `cat_tracker.health` notices a camera with no new picture for
 `health.camera_stale_s`, or detection failing for `health.detector_fail_s`, and shows a notice in VR. No marker

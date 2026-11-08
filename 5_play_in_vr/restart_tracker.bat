@@ -1,7 +1,8 @@
 @echo off
 rem Restarts the cat tracker in the background (no window), e.g. after changing a settings file.
 rem Stops the running one first (like stop_tracker.bat), waits for it to let go of the cameras, then starts a
-rem new one the way SteamVR does: saved anchor, no window. SteamVR must be running.
+rem new one the way SteamVR does: saved anchor, no window (and the app's SteamVR tab, if the app is installed).
+rem SteamVR must be running.
 rem For the VRChat version, use 6_optional_vrchat\restart_with_vrchat.bat.
 set "TOP=%~dp0.."
 if not exist "%TOP%\.venv\Scripts\python.exe" (
