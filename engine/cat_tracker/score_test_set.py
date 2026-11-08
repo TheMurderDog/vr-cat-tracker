@@ -4,7 +4,8 @@ there. Read only: nothing is trained, no settings or labels change.
 The fair test set is the capture session(s) marked as test ("TEST SET: not trained on" on the sessions screen; mark
 one with python -m cat_tracker.sessions --test NAME). Only its decided pictures count (skipped ones don't). Each
 model runs the tracker's way: its own detector code, the input size from settings, and the tracker's confidence
-threshold (detector.score), so the numbers match what the tracker sees on its own.
+threshold (detector.score), so the numbers come close to what the tracker sees on its own (it also uses weaker
+boxes next to another camera's sighting, which this doesn't count).
 
 From the engine folder:
   python -m cat_tracker.score_test_set                       the model in settings, and the stock model if present
@@ -149,13 +150,13 @@ def main(argv=None):
         det = CatDetector({**dc, "cat_class": cls}, model, providers, require_gpu=False)
         total, per_cam, ms = score_model(det, pictures)
         print(f"{Path(model).name}  (cat class {cls}, {ms:.0f} ms a picture)")
-        print(f"  found the cat      {pct(total['found'], total['cat'])}  ({total['found']}/{total['cat']} pictures with the cat had a box)")
-        print(f"  box on the cat     {pct(total['on_cat'], total['cat'])}  (a box overlapping yours by {OVERLAP} IoU or more)")
+        print(f"  box on the cat     {pct(total['on_cat'], total['cat'])}  ({total['on_cat']}/{total['cat']} pictures with the cat had a box overlapping yours by {OVERLAP} IoU or more)")
+        print(f"  any box            {pct(total['found'], total['cat'])}  (looser: a box anywhere on a picture with the cat)")
         print(f"  false alarms       {pct(total['false_alarm'], total['no_cat'])}  ({total['false_alarm']}/{total['no_cat']} no-cat pictures had a box)")
         print(f"  extra boxes        {total['extra']} on pictures with the cat")
         for cam in sorted(per_cam):
             c = per_cam[cam]
-            print(f"    {cam:<10} found {pct(c['found'], c['cat'])}   false alarms {pct(c['false_alarm'], c['no_cat'])}"
+            print(f"    {cam:<10} box on the cat {pct(c['on_cat'], c['cat'])}   false alarms {pct(c['false_alarm'], c['no_cat'])}"
                   f" ({c['false_alarm']}/{c['no_cat']})")
         print()
         with open(out_file, "a", encoding="utf-8") as f:
@@ -164,8 +165,8 @@ def main(argv=None):
                                 "total": total, "per_camera": per_cam}) + "\n")
 
     print("These numbers come from your test session only: one room, one day, your cat and light. Pictures next to\n"
-          "each other look alike, so treat each number as roughly +/-5%. A small difference between two models may be\n"
-          "chance. If a model's own boxes were the starting point for your labels, its box-on-the-cat number reads\n"
+          "each other look alike, so a test session of a few hundred moments only pins a number down to roughly\n"
+          "+/-5% (a rough estimate, not a measured margin). A small difference between two models may be chance. If a model's own boxes were the starting point for your labels, its box-on-the-cat number reads\n"
           "a little high. The tracker also uses weaker boxes near where another camera sees the cat, which this\n"
           "doesn't count.")
     print(f"Saved to {out_file}")
