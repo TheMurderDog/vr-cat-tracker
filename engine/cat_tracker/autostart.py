@@ -4,7 +4,8 @@ SteamVR starts it from its own folder with the top folder's .venv pythonw.exe, s
 first, then runs cat_tracker.run with the arguments saved in the manifest (--reuse-anchor --headless and
 whatever was given to install_autostart.bat). The tracker closes when SteamVR does. With no window,
 anything that goes wrong before the log starts is written to my_data/logs/cat_tracker/autostart_error.txt.
-With --via-app first (the Cat Tracker app is installed), the tracker runs through cat_app.bridge so the app can see it.
+When the Cat Tracker app is installed, it goes through cat_app.launch: the tracker runs through cat_app.bridge
+and the app starts too (its SteamVR tab). --no-app in the manifest's arguments leaves the app out.
 """
 
 import os
@@ -20,13 +21,10 @@ def main():
     sys.path.insert(0, str(ENGINE))
     args = sys.argv[1:]
     try:
-        if args[:1] == ["--via-app"]:
-            sys.argv = ["cat_app.bridge", "--"] + args[1:]
-            from cat_app import bridge
-            return bridge.main()
-        sys.argv = ["cat_tracker.run"] + args
-        from cat_tracker import run
-        return run.main()
+        args = [a for a in args if a != "--via-app"]  # (older manifests; the app is now found by itself)
+        from cat_app import launch
+        return launch.main(["--background"] + (["--no-app"] if "--no-app" in args else []) + ["--"]
+                           + [a for a in args if a != "--no-app"])
     except BaseException:  # noqa: BLE001
         p = ENGINE.parent / "my_data" / "logs" / "cat_tracker" / "autostart_error.txt"
         p.parent.mkdir(parents=True, exist_ok=True)
