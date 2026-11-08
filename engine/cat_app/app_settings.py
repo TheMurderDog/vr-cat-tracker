@@ -18,6 +18,8 @@ DEFAULTS = {
                                  # is, and one step stronger each time it comes closer (each step once)
     "snooze_until": 0.0,         # time.time() until which buzzes are muted (-1: until switched back on)
     "snooze_minutes": 30,        # how long the Snooze button on the main screens mutes it (-1: until switched back on)
+    "start_osc": None,           # Start sends to VRChat: the last choice on the desktop window (None: not chosen
+                                 # yet, so whatever the SteamVR autostart uses)
     "map": {
         "heat": "wobble",        # "off", "time" (where the cat spends time) or "wobble" (where tracking jitters)
         "trail_wobble": True,    # colour the cat's trail by how much the tracking jitters there
@@ -84,6 +86,8 @@ def clamp(s):
             out["snooze_minutes"] = int(s["snooze_minutes"])
     except (TypeError, ValueError, KeyError):
         pass
+    if isinstance(s.get("start_osc"), bool):
+        out["start_osc"] = s["start_osc"]
     m = s.get("map") if isinstance(s.get("map"), dict) else {}
     if m.get("heat") in HEAT:
         out["map"]["heat"] = m["heat"]

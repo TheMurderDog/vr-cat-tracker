@@ -102,7 +102,7 @@ ApplicationWindow {
                                             Text { text: "When starting"; color: Theme.muted; font.pixelSize: 14 }
                                             CheckBox { id: newAnchor; checked: false; text: "Walk for a new anchor (only if asked)"
                                                        contentItem: Text { leftPadding: newAnchor.indicator.width + 8; text: newAnchor.text; color: Theme.text; font.pixelSize: 15; verticalAlignment: Text.AlignVCenter } }
-                                            CheckBox { id: osc; checked: false; text: "Send to VRChat (OSC)"
+                                            CheckBox { id: osc; checked: backend.startOsc; text: "Send to VRChat (OSC)"
                                                        contentItem: Text { leftPadding: osc.indicator.width + 8; text: osc.text; color: Theme.text; font.pixelSize: 15; verticalAlignment: Text.AlignVCenter } }
                                         }
                                     }
