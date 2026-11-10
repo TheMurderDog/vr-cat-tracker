@@ -18,6 +18,8 @@ DEFAULTS = {
                                  # is, and one step stronger each time it comes closer (each step once)
     "snooze_until": 0.0,         # time.time() until which buzzes are muted (-1: until switched back on)
     "snooze_minutes": 30,        # how long the Snooze button on the main screens mutes it (-1: until switched back on)
+    "vr_mode": "d3d11",          # how the SteamVR tab and wrist widget reach SteamVR: "d3d11" (a GPU texture) or "file"
+                                 # (a picture file, no graphics card use by the app; for ruling it out when a PC crashes)
     "start_osc": None,           # Start sends to VRChat: the last choice on the desktop window (None: not chosen
                                  # yet, so whatever the SteamVR autostart uses)
     "map": {
@@ -56,6 +58,7 @@ LIMITS = {
 ATTACH = ("left", "right", "head", "room")
 HEAT = ("off", "time", "wobble")
 BUZZ_STYLES = ("once", "rising")
+VR_MODES = ("d3d11", "file")
 SNOOZE_MINUTES = (15, 30, 60, 120, -1)
 
 
@@ -86,6 +89,8 @@ def clamp(s):
             out["snooze_minutes"] = int(s["snooze_minutes"])
     except (TypeError, ValueError, KeyError):
         pass
+    if s.get("vr_mode") in VR_MODES:
+        out["vr_mode"] = s["vr_mode"]
     if isinstance(s.get("start_osc"), bool):
         out["start_osc"] = s["start_osc"]
     m = s.get("map") if isinstance(s.get("map"), dict) else {}
