@@ -151,7 +151,7 @@ vrchat:                     # 6_optional_vrchat\3_run_with_vrchat.bat: its posit
   send_hz: 60               # every parameter, this often, each time with the headset pose read right then
   stick_anchor:             # EXPERIMENTAL: hold the cat's reference point still while the thumbsticks rest (stick_anchor.py)
     enabled: false          # true only with an avatar prefab that has CatAnchorMode (docs\vrchat_avatar.md)
-    stick_deadzone: 0.2     # a thumbstick counts as pushed past this (0..1); any button but a trackpad also counts
+    stick_deadzone: 0.2     # a thumbstick counts as pushed past this (0..1); so does a button (not grip or trackpad)
     stick_min_s: 0.1        # ...for at least this long, so a brushed stick doesn't count
     settle_s: 0.3           # after the sticks are let go, wait this long before looking for a steady head
     still_turn_dps: 15      # steady head: turning slower than this (degrees a second)...

@@ -7,8 +7,9 @@ With it, the tracker works out when your VRChat play space is standing still and
 measured from one fixed headset pose (the "stamp") instead. The avatar freezes a point in the world at that
 moment and draws the cat from it, so turning your head or walking around for real doesn't move that point.
 
-  head mode   a thumbstick is pushed (VRChat moves or turns you), any button other than a trackpad is pressed
-              (grabbing the play space, a menu, anything), or SteamVR's play space moves. The cat is measured
+  head mode   a thumbstick is pushed (VRChat moves or turns you), a button is pressed (A/B/X/Y, trigger,
+              menu: grabbing the play space, a menu, anything; not the grip, where many hands rest, or a
+              trackpad), or SteamVR's play space moves. The cat is measured
               from the live headset, as without this feature. So you decide when it lets go.
   settling    the sticks were let go: wait settle_s, then for the headset to be steady (turning slower than
               still_turn_dps and moving slower than still_move_mps) for average_s. No time limit: if it

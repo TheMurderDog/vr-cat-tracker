@@ -250,7 +250,7 @@ Paths are relative to the top folder unless absolute.
 | `vrchat.send_hz` | `60` | every parameter, this often, each time with the headset pose read right then |
 | `vrchat.stick_anchor` |  | EXPERIMENTAL: hold the cat's reference point still while the thumbsticks rest (stick_anchor.py) |
 | `vrchat.stick_anchor.enabled` | `false` | true only with an avatar prefab that has CatAnchorMode (docs\vrchat_avatar.md) |
-| `vrchat.stick_anchor.stick_deadzone` | `0.2` | a thumbstick counts as pushed past this (0..1); any button but a trackpad also counts |
+| `vrchat.stick_anchor.stick_deadzone` | `0.2` | a thumbstick counts as pushed past this (0..1); a pressed button also counts (not the grip or a trackpad) |
 | `vrchat.stick_anchor.stick_min_s` | `0.1` | ...for at least this long, so a brushed stick doesn't count |
 | `vrchat.stick_anchor.settle_s` | `0.3` | after the sticks are let go, wait this long before looking for a steady head |
 | `vrchat.stick_anchor.still_turn_dps` | `15` | steady head: turning slower than this (degrees a second)... |

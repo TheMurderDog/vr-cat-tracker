@@ -56,15 +56,6 @@
           }
         },
         {
-          "path": "/user/hand/left/input/grip",
-          "mode": "button",
-          "inputs": {
-            "click": {
-              "output": "/actions/cat/in/press"
-            }
-          }
-        },
-        {
           "path": "/user/hand/right/input/thumbstick",
           "mode": "joystick",
           "inputs": {
@@ -97,15 +88,6 @@
         {
           "path": "/user/hand/right/input/trigger",
           "mode": "trigger",
-          "inputs": {
-            "click": {
-              "output": "/actions/cat/in/press"
-            }
-          }
-        },
-        {
-          "path": "/user/hand/right/input/grip",
-          "mode": "button",
           "inputs": {
             "click": {
               "output": "/actions/cat/in/press"

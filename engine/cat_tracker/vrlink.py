@@ -86,8 +86,8 @@ class VRLink:
                     pass
 
     def sticks(self):
-        """How far the further-pushed thumbstick is from centre (0..1), or 1 while any button other than a
-        trackpad is pressed, read fresh; None if SteamVR Input isn't set up or gives no controller data (no
+        """How far the further-pushed thumbstick is from centre (0..1), or 1 while a button other than a
+        grip or trackpad is pressed, read fresh; None if SteamVR Input isn't set up or gives no controller data (no
         controllers on, or bindings without them). Only reads them: VRChat still gets every input as usual."""
         if self.input is None:
             return None
