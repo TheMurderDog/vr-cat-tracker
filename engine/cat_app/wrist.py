@@ -20,7 +20,7 @@ import numpy as np
 
 from core.config import resolve_path
 
-from cat_app.vr_dashboard import APP_KEY
+from cat_app.vr_dashboard import APP_KEY, PictureFile
 
 KEY = APP_KEY + ".wrist"
 SIZE = (640, 320)
@@ -104,6 +104,7 @@ class WristWidget:
         self.handle = ov.createOverlay(KEY, "Cat Tracker wrist widget")
         self.d3d = None
         self.mode = dash.mode
+        self.picture = PictureFile("wrist")
         self.alpha = -1.0
         self.shown = False
         self.placed = None          # (attach, offset bytes, device index) last given to SteamVR
@@ -366,13 +367,7 @@ class WristWidget:
                 self.log(f"Wrist widget: Direct3D 11 texture didn't work ({e}); using a picture file")
                 self.mode = "file"
                 self._close_d3d()
-        from cat_app.vr_dashboard import TMP
-        p = TMP / "wrist.png"
-        p.parent.mkdir(parents=True, exist_ok=True)
-        tmp = TMP / "wrist_new.png"
-        img.save(str(tmp), "PNG", 1)
-        os.replace(tmp, p)
-        self.ov.setOverlayFromFile(self.handle, str(p))
+        self.picture.send(self.ov, self.handle, img)
 
     def _close_d3d(self):
         if self.d3d is not None:
