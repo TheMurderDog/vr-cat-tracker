@@ -7,17 +7,19 @@ With it, the tracker works out when your VRChat play space is standing still and
 measured from one fixed headset pose (the "stamp") instead. The avatar freezes a point in the world at that
 moment and draws the cat from it, so turning your head or walking around for real doesn't move that point.
 
-  head mode   a thumbstick is pushed (VRChat moves or turns you), or SteamVR's play space moved. The cat is
-              measured from the live headset, as without this feature.
+  head mode   a thumbstick is pushed (VRChat moves or turns you), any button other than a trackpad is pressed
+              (grabbing the play space, a menu, anything), or SteamVR's play space moves. The cat is measured
+              from the live headset, as without this feature. So you decide when it lets go.
   settling    the sticks were let go: wait settle_s, then for the headset to be steady (turning slower than
               still_turn_dps and moving slower than still_move_mps) for average_s. No time limit: if it
               doesn't get steady, it stays in head mode.
   anchored    the stamp is the headset's average pose over that steady moment, flat on the floor.
               CatAnchorMode is true and every offset is measured from the stamp.
 
-While anchored and steady, it re-anchors every refresh_s (a short drop to head mode), so someone who joins
-the instance later picks up a fresh anchor. VRChat teleports, seats and moving platforms move you without
-the sticks or SteamVR's play space, so it can't see them; the next stick push fixes the anchor.
+Someone who joins the instance while you're anchored picks up the anchor at your next stick push (or set
+refresh_s to re-anchor every so often while you stand still; each re-anchor can shift the cat slightly).
+VRChat teleports, seats and moving platforms move you without a button or stick, so it can't see them; the
+next press fixes the anchor.
 """
 
 import collections
@@ -27,15 +29,16 @@ import numpy as np
 
 DEFAULTS = {
     "enabled": False,
-    "stick_deadzone": 0.2,     # a stick counts as pushed past this (0..1)
+    "stick_deadzone": 0.2,     # a stick counts as pushed past this (0..1); a pressed button counts as 1
     "stick_min_s": 0.1,        # pushed at least this long, so a brushed stick doesn't count
     "settle_s": 0.3,           # after the sticks are let go, before looking for a steady head
     "still_turn_dps": 15.0,    # steady: headset turning slower than this (degrees a second)...
     "still_move_mps": 0.15,    # ...and moving slower than this (metres a second, along the floor)
     "average_s": 0.5,          # steady this long; the anchor is the average pose over it
-    "refresh_s": 30.0,         # while anchored and steady, re-anchor this often (0 = off)
-    "playspace_move_m": 0.01,  # SteamVR's play space moved more than this...
-    "playspace_turn_deg": 0.5,  # ...or turned more than this since the last update: counts as moving
+    "refresh_s": 0.0,          # while anchored and steady, re-anchor this often (0 = off)
+    "playspace_move_m": 0.03,  # SteamVR's play space moved more than this (OVR Advanced Settings and the like)...
+    "playspace_turn_deg": 1.0,  # ...or turned more than this, counts as moving (0 = off)
+    "lost_sticks_s": 1.0,      # sticks unreadable this long (controller off, SteamVR Input gone): head mode
 }
 
 
@@ -79,6 +82,7 @@ class StickAnchor:
         self.hist = collections.deque()  # recent (t, x, z, yaw) for the head speed
         self.last_M = None
         self.refreshing = False
+        self.lost_since = None         # when the sticks stopped being readable
 
     @property
     def anchored(self):
@@ -109,13 +113,18 @@ class StickAnchor:
 
     def update(self, now, hmd_raw, stick, raw_to_standing=None):
         """now: seconds; hmd_raw: 4x4 headset pose in raw space or None; stick: the larger thumbstick
-        push 0..1, or None when the sticks can't be read; raw_to_standing: SteamVR's current 4x4.
+        push 0..1 (1 while a button is pressed), or None when the controllers can't be read; raw_to_standing: SteamVR's current 4x4.
         Returns the stamp (4x4, raw space) while anchored, else None."""
         if not self.enabled:
             return None
-        if stick is None:  # can't see the sticks: anchoring would hold the cat still while VRChat moves you
-            self._drop(now, "can't read the thumbsticks")
-            return None
+        if stick is None:  # can't see the sticks: after a moment, anchoring could hold the cat still while VRChat moves you
+            if self.lost_since is None:
+                self.lost_since = now
+            if now - self.lost_since >= float(self.c["lost_sticks_s"]):
+                self._drop(now, "can't read the thumbsticks")
+                return None
+            return self.stamp
+        self.lost_since = None
         if self.last_move is None:
             self.last_move = now
 
@@ -127,15 +136,18 @@ class StickAnchor:
         else:
             self.pushed_since = None
         if pushed and now - self.pushed_since >= float(self.c["stick_min_s"]):
-            self._drop(now, "stick %.2f", stick)
-        if raw_to_standing is not None:
-            if self.last_M is not None:
-                d = np.linalg.norm(raw_to_standing[:3, 3] - self.last_M[:3, 3])
-                r = self.last_M[:3, :3].T @ raw_to_standing[:3, :3]
-                ang = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(r) - 1) / 2))))
-                if d > float(self.c["playspace_move_m"]) or ang > float(self.c["playspace_turn_deg"]):
-                    self._drop(now, "play space moved %.2f m, %.1f deg", d, ang)
-            self.last_M = np.array(raw_to_standing, float)
+            self._drop(now, "stick or button %.2f", stick)
+        pm, pt = float(self.c["playspace_move_m"]), float(self.c["playspace_turn_deg"])
+        if raw_to_standing is not None and (pm > 0 or pt > 0):
+            # measured from where it last stood, so slow drags add up and tracking noise doesn't
+            if self.last_M is None:
+                self.last_M = np.array(raw_to_standing, float)
+            d = np.linalg.norm(raw_to_standing[:3, 3] - self.last_M[:3, 3])
+            r = self.last_M[:3, :3].T @ raw_to_standing[:3, :3]
+            ang = math.degrees(math.acos(max(-1.0, min(1.0, (np.trace(r) - 1) / 2))))
+            if (pm > 0 and d > pm) or (pt > 0 and ang > pt):
+                self._drop(now, "play space moved %.2f m, %.1f deg", d, ang)
+                self.last_M = np.array(raw_to_standing, float)
 
         if hmd_raw is None:
             self.steady = []

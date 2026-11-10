@@ -151,13 +151,16 @@ vrchat:                     # 6_optional_vrchat\3_run_with_vrchat.bat: its posit
   send_hz: 60               # every parameter, this often, each time with the headset pose read right then
   stick_anchor:             # EXPERIMENTAL: hold the cat's reference point still while the thumbsticks rest (stick_anchor.py)
     enabled: false          # true only with an avatar prefab that has CatAnchorMode (docs\vrchat_avatar.md)
-    stick_deadzone: 0.2     # a thumbstick counts as pushed past this (0..1)
+    stick_deadzone: 0.2     # a thumbstick counts as pushed past this (0..1); any button but a trackpad also counts
     stick_min_s: 0.1        # ...for at least this long, so a brushed stick doesn't count
     settle_s: 0.3           # after the sticks are let go, wait this long before looking for a steady head
     still_turn_dps: 15      # steady head: turning slower than this (degrees a second)...
     still_move_mps: 0.15    # ...and moving slower than this (metres a second)
     average_s: 0.5          # steady this long; the anchor is the head's average pose over it
-    refresh_s: 30           # while anchored and steady, anchor again this often, for people who join later (0 = off)
+    refresh_s: 0            # while anchored and steady, anchor again this often, for people who join later (0 = off)
+    playspace_move_m: 0.03  # SteamVR's play space moving more than this (OVR Advanced Settings and the like)...
+    playspace_turn_deg: 1.0 # ...or turning more than this ends the anchor too (0 = off)
+    lost_sticks_s: 1.0      # sticks unreadable this long (controller off): back to head mode
 
 capture:                    # 4_teach_it_your_cat\1_capture.bat (or c in a tracker window): frames saved in my_data/captures
   every_s: 2.0              # one frame from each camera this often (10 minutes = 1200 images)

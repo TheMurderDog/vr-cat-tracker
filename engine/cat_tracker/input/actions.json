@@ -29,6 +29,10 @@
     {
       "name": "/actions/cat/in/move",
       "type": "vector2"
+    },
+    {
+      "name": "/actions/cat/in/press",
+      "type": "boolean"
     }
   ],
   "action_sets": [
@@ -42,7 +46,8 @@
       "language_tag": "en_US",
       "/actions/cat": "Cat tracker",
       "/actions/cat/out/buzz": "Buzz when the cat is underfoot",
-      "/actions/cat/in/move": "Thumbstick (read only, to tell when VRChat moves you)"
+      "/actions/cat/in/move": "Thumbstick (read only, to tell when VRChat moves you)",
+      "/actions/cat/in/press": "Any button except the trackpad (read only, to tell when you move the play space)"
     }
   ]
 }

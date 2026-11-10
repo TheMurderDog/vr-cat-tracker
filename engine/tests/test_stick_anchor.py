@@ -29,7 +29,7 @@ def run(sa, t, secs, head, stick=0.0, M=None):
 def main():
     for yaw in (0.0, 30.0, -135.0, 179.0):
         assert abs(yaw_of(flat_pose(1.0, 2.0, yaw)) - yaw) < 1e-6, "flat_pose and yaw_of agree"
-    sa = StickAnchor({"enabled": True, "refresh_s": 0})
+    sa = StickAnchor({"enabled": True})
     still = lambda t: flat_pose(0.5, -1.0, 40.0, 1.6)  # noqa: E731
     t, out = run(sa, 0.0, 0.5, still)
     assert out is None, "not yet: settle + average"
@@ -59,8 +59,24 @@ def main():
 
     t, out = run(sa, t, 3.0, walk)
     assert out is None, "no anchor while the head keeps moving (no time limit)"
-    t, out = run(sa, t, 1.0, still, stick=None)
+    t, out = run(sa, t, 1.5, still, stick=None)
     assert out is None, "can't read the sticks: stays in head mode"
+
+    sa = StickAnchor({"enabled": True})
+    t, out = run(sa, 0.0, 1.0, still)
+    assert out is not None
+    small = np.eye(4)
+    small[0, 3] = 0.01
+    t, out = run(sa, t, 0.5, still, M=small)
+    assert out is not None, "a 1 cm play space wobble keeps the anchor"
+    t, out = run(sa, t, 0.5, still, stick=None)
+    assert out is not None, "a short stick-reading gap keeps the anchor"
+    t, out = run(sa, t, 0.6, still, stick=None)
+    assert out is None, "a longer gap: head mode"
+    sa = StickAnchor({"enabled": True})
+    t, out = run(sa, 0.0, 1.0, still)
+    t, out = run(sa, t, 60.0, still)
+    assert out is not None and sa.anchored_at < 2.0, "no refresh by default"
 
     sa = StickAnchor({"enabled": True, "refresh_s": 2.0})
     t, out = run(sa, 0.0, 1.0, still)

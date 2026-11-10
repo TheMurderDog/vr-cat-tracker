@@ -66,6 +66,7 @@ class VRLink:
             self.aset = inp.getActionSetHandle("/actions/cat")
             self.buzz_action = inp.getActionHandle("/actions/cat/out/buzz")
             self.move_action = inp.getActionHandle("/actions/cat/in/move")
+            self.press_action = inp.getActionHandle("/actions/cat/in/press")
             self.hands = [inp.getInputSourceHandle(p) for p in ("/user/hand/left", "/user/hand/right")]
             self.active = (openvr.VRActiveActionSet_t * 1)()
             self.active[0].ulActionSet = self.aset
@@ -85,9 +86,9 @@ class VRLink:
                     pass
 
     def sticks(self):
-        """How far the further-pushed thumbstick is from centre (0..1), read fresh, or None if SteamVR
-        Input isn't set up or gives no stick data (no controllers on, or bindings without the sticks).
-        Only reads them: VRChat still gets the sticks as usual."""
+        """How far the further-pushed thumbstick is from centre (0..1), or 1 while any button other than a
+        trackpad is pressed, read fresh; None if SteamVR Input isn't set up or gives no controller data (no
+        controllers on, or bindings without them). Only reads them: VRChat still gets every input as usual."""
         if self.input is None:
             return None
         with self.input_lock:
@@ -99,6 +100,11 @@ class VRLink:
                     if d.bActive:
                         seen = True
                         best = max(best, math.hypot(d.x, d.y))
+                    b = self.input.getDigitalActionData(self.press_action, h)
+                    if b.bActive:
+                        seen = True
+                        if b.bState:
+                            best = 1.0
                 return best if seen else None
             except Exception:  # noqa: BLE001
                 return None
