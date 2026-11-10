@@ -17,7 +17,7 @@ Let friends in VRChat see a stand-in cat on your avatar, where your real cat is.
      It reads and writes no files and uses no network.
    - Drag `Cat Tracker.prefab` onto your avatar's root object (the one with the Avatar Descriptor). Leave its position,
      rotation and scale at 0, 0 and 1.
-   - Upload the avatar. It uses 43 bits of your synced parameters.
+   - Upload the avatar. It uses 44 bits of your synced parameters.
 2. `2_osc_test.bat` - shows a pretend cat 1 m in front of you, and a ring on the floor in SteamVR. The stand-in cat
    should sit on the ring. Press `2` for 2 m, `1` for 1 m, `q` to quit. Close the real tracker first.
 3. `3_run_with_vrchat.bat` - runs the tracker and sends your cat to the avatar.
@@ -39,6 +39,8 @@ Friends see the stand-in cat where your cat is.
   cat keeps its size. Upload and check at 1 m and 2 m.
 - **Nothing shows in VRChat:** check OSC is on (and try Reset Config there), and that the tracker shows the cat in
   SteamVR.
+- **The stand-in cat swims a little as you walk around your room:** try the experimental play-space anchor in
+  [docs/vrchat_avatar.md](../docs/vrchat_avatar.md#play-space-anchor-experimental).
 - Your own cat model, the parameters and known limits: [docs/vrchat_avatar.md](../docs/vrchat_avatar.md).
 
 ## Next

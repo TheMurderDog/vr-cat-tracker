@@ -5,6 +5,7 @@ This shows a stand-in cat on your VRChat avatar at the spot where the cat tracke
 - shows when the cat is seen and hides when it isn't,
 - stands at the right distance and side from your head (flat on the floor, so it doesn't follow your head tilt or your eyes),
 - locks in place in the world while you stand still, so it doesn't swim when you look around, and follows again when you move,
+- optionally (experimental) holds still in the world while your thumbsticks rest, even while you walk around your room for real ([Play-space anchor](#play-space-anchor-experimental)),
 - faces the way the cat is heading once the tracker knows it, and faces you until then,
 - switches between four poses: **Standing**, **Sleeping**, **Walking** and **Alert** (alert shows while the tracker is warning you that the cat is close).
 
@@ -12,8 +13,8 @@ The package ships with a simple placeholder cat (a low-poly stick figure). Swap 
 
 ## Requirements
 
-- Unity 2022.3 (the version VRChat currently uses) with the **VRChat Avatars SDK 3.10.x** (tested with 3.10.5)
-- **VRCFury** (tested with 1.1433.0), installed through the VRChat Creator Companion
+- Unity 2022.3 (the version VRChat currently uses) with the **VRChat Avatars SDK 3.10.x** (tested with 3.10.5; the play-space anchor with 3.10.6)
+- **VRCFury** (tested with 1.1433.0; the play-space anchor with 1.1442.0), installed through the VRChat Creator Companion
 - The cat tracker from this repository running on the same PC, with OSC enabled in VRChat (Action menu > Options > OSC > Enabled)
 
 ## What's in the package
@@ -36,7 +37,8 @@ The package ships with a simple placeholder cat (a low-poly stick figure). Swap 
 1. Import `CatTracker.unitypackage` into your avatar project (VRChat SDK and VRCFury already installed).
 2. Drag `Cat Tracker.prefab` onto your avatar's root object in the Hierarchy (directly under the object with the Avatar Descriptor). Leave its position, rotation and scale at zero, zero and one.
 3. That's it. VRCFury adds the FX layers and parameters when you enter Play mode or upload. You don't need to edit your FX controller, menu or parameter list.
-4. Check the avatar's synced parameter budget: the prefab adds **43 bits**.
+4. Check the avatar's synced parameter budget: the prefab adds **44 bits**.
+5. If you're updating from an older version of the package, use Reset Config in VRChat's OSC menu after uploading, so VRChat picks up the new parameter.
 
 How it fits on your avatar: VRCFury's **Armature Link** snaps `CatHeadLink` onto your avatar's Head bone (position only), and `CatHeadRef` inside it sits at your view position. Everything else stays under the prefab.
 
@@ -54,8 +56,27 @@ These match the names, types and units sent by the tracker's `osc.py`. All of th
 | `HeadRoomYaw` | Float -1..1 | yes | Headset heading on the room floor, degrees ÷ 180, clockwise from above |
 | `CatRoomYaw` | Float -1..1 | yes | Cat heading, same units and frame as `HeadRoomYaw` |
 | `CatHeadingKnown` | Bool | yes | The cat has moved enough to know its heading |
+| `CatAnchorMode` | Bool | yes | Play-space anchor on: `CatAhead` and `CatRight` are measured from the anchor, not the headset (experimental, off unless turned on in the tracker settings) |
 
 The prefab also uses two local parameters that it drives itself, `CatInRange` and `CatAnchored`, plus VRChat's built-in `VelocityMagnitude` and `AngularY`. The tracker also sends `CatRoomX`, `CatRoomZ`, `HeadRoomX` and `HeadRoomZ`. The prefab doesn't use them, and VRChat ignores parameters an avatar doesn't have.
+
+## Play-space anchor (experimental)
+
+Without it, the cat's position is measured from your headset each update, and the prefab locks it in the world only while you stand still. With it, the tracker fixes a reference point in your room while you're not moving yourself with the controllers, and measures the cat from that point instead. The avatar freezes that point in the VRChat world, so the stand-in cat tries to stay put while you look around or walk around your room for real. It's only as good as the tracker's view of your cat and SteamVR tracking (see the limits below and [Known limits](#known-limits)).
+
+To turn it on, set `vrchat.stick_anchor.enabled: true` in `settings/cat_tracker.yaml` (see [settings_reference.md](technical/settings_reference.md)), then restart SteamVR so it loads the tracker's controller bindings. Only turn it on with a version of this prefab that has `CatAnchorMode`: an older prefab would draw the cat from your head while the tracker measures from the anchor, so the cat would land in the wrong spot.
+
+How it decides:
+
+- **Head mode** (the cat is measured from your headset, as without the anchor) while you push a thumbstick, press a button other than the grip or a trackpad (A/B/X/Y, trigger, menu), or move SteamVR's play space more than 3 cm or 1° (for example with OVR Advanced Settings).
+- **Anchored** about a second after you let go, once your head is steady for half a second. There's no time limit: if your head doesn't settle, it stays in head mode.
+- It reads the controllers through SteamVR Input without taking them over, so VRChat still gets every input. If the controllers can't be read for a second, it goes back to head mode.
+
+Limits:
+
+- VRChat teleports, seats, moving platforms and other movement that doesn't come from your sticks or buttons can't be seen by the tracker, so the cat can sit in the wrong spot until your next stick push or button press.
+- Someone who joins the instance while you're anchored sees the cat measured from your head until your next stick push or button press.
+- It was tested by the author on one avatar with an Index headset and controllers. Other controllers use the bindings in `engine/cat_tracker/input/` and haven't been tried.
 
 ## Distance scale (calibration)
 
@@ -91,8 +112,8 @@ Keep materials light: this is a prop that other players render too.
 | PhysBones | 1 (2 transforms, no colliders), used to smooth movement |
 | Contacts | 2 (1 sender, 1 receiver), used for the world lock |
 | Constraints | 7, plus whatever your own model brings |
-| FX layers | 8 (6 tracker, 2 pose); all states have Write Defaults off |
-| Synced parameter bits | 43 |
+| FX layers | 9 (7 tracker, 2 pose); all states have Write Defaults off |
+| Synced parameter bits | 44 |
 
 ## Known limits
 
