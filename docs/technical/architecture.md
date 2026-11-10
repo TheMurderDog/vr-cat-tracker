@@ -72,7 +72,10 @@ Each loop of `cat_tracker.run`:
    decides when to warn (distance, closing speed, the cat's motion) and buzzes the controllers through SteamVR Input
    (`engine/cat_tracker/input/actions.json`).
 7. **Send (optional, `--osc`).** `cat_tracker.osc` sends twelve avatar parameters to VRChat over UDP on
-   `127.0.0.1:9000`, from its own thread at `vrchat.send_hz`, each time with a fresh headset pose.
+   `127.0.0.1:9000`, from its own thread at `vrchat.send_hz`, each time with a fresh headset pose. With
+   `vrchat.stick_anchor` on (experimental), `cat_tracker.stick_anchor` reads the thumbsticks and buttons through SteamVR
+   Input (read only) and, while they rest and the head is steady, measures the cat from a fixed anchor pose instead of the
+   live headset, and sends a thirteenth parameter, `CatAnchorMode`.
 
 Alongside: `cat_tracker.collect` saves training frames when capturing, and `cat_tracker.hardframes` saves the
 moments the detector got partly wrong.

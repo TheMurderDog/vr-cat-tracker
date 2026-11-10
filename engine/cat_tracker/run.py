@@ -38,6 +38,7 @@ from cat_tracker.light import LightWatch
 from cat_tracker.notice import render as render_notice
 from cat_tracker.locate import CatTrack, locate, room_bounds, weak_matches
 from cat_tracker.osc import OscCat, OscStream
+from cat_tracker.stick_anchor import StickAnchor
 from cat_tracker.vrlink import billboard, edge_pose, flat, horizontal_distance
 from core.config import get, resolve_path
 from core.runlog import start_run
@@ -324,7 +325,11 @@ def main():
     stream = None
     if osc is not None:
         send_hz = float((cc.get("vrchat", {}) or {}).get("send_hz", 60))
-        stream = OscStream(osc, vr, send_hz, log)
+        sa = StickAnchor((cc.get("vrchat", {}) or {}).get("stick_anchor"), log)
+        if sa.enabled:
+            vr.setup_haptics(resolve_path("engine/cat_tracker/input/actions.json"), log)  # for the thumbsticks
+            log.info("Stick anchor (experimental): ON, anchoring the cat while the thumbsticks rest")
+        stream = OscStream(osc, vr, send_hz, log, anchor=sa)
         log.info("Sending its position to VRChat over OSC at %s:%d, %g a second", *osc.addr, send_hz)
     floor_y = float(lc.get("floor_y_m", 0.0))
     # detections per second: the full rate only while it's moving or close to you; it's mostly asleep

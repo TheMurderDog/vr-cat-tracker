@@ -38,6 +38,7 @@ class VRLink:
         self.ov = openvr.VROverlay()
         self.overlays = {}
         self.input = None
+        self.input_lock = threading.Lock()  # the OSC thread reads the sticks while the main loop updates
 
     def quit_requested(self):
         """True once SteamVR asks overlay apps to close (it's shutting down)."""
@@ -55,12 +56,17 @@ class VRLink:
 
     def setup_haptics(self, manifest_path, log=None):
         """SteamVR Input: one vibration output (/actions/cat/out/buzz), bound to both hands by
-        input/bindings_*.json. Falls back to the old per-device pulse if SteamVR Input won't take it."""
+        input/bindings_*.json, and the thumbsticks (/actions/cat/in/move, only read, see sticks()).
+        Falls back to the old per-device pulse if SteamVR Input won't take it. Calling it again does nothing."""
+        if self.input is not None:
+            return
         try:
             inp = openvr.VRInput()
             inp.setActionManifestPath(str(manifest_path))
             self.aset = inp.getActionSetHandle("/actions/cat")
             self.buzz_action = inp.getActionHandle("/actions/cat/out/buzz")
+            self.move_action = inp.getActionHandle("/actions/cat/in/move")
+            self.press_action = inp.getActionHandle("/actions/cat/in/press")
             self.hands = [inp.getInputSourceHandle(p) for p in ("/user/hand/left", "/user/hand/right")]
             self.active = (openvr.VRActiveActionSet_t * 1)()
             self.active[0].ulActionSet = self.aset
@@ -73,10 +79,35 @@ class VRLink:
     def update_input(self):
         """Keeps the action set active; call every update."""
         if self.input is not None:
+            with self.input_lock:
+                try:
+                    self.input.updateActionState(self.active)
+                except Exception:  # noqa: BLE001
+                    pass
+
+    def sticks(self):
+        """How far the further-pushed thumbstick is from centre (0..1), or 1 while a button other than a
+        grip or trackpad is pressed, read fresh; None if SteamVR Input isn't set up or gives no controller data (no
+        controllers on, or bindings without them). Only reads them: VRChat still gets every input as usual."""
+        if self.input is None:
+            return None
+        with self.input_lock:
             try:
                 self.input.updateActionState(self.active)
+                best, seen = 0.0, False
+                for h in self.hands:
+                    d = self.input.getAnalogActionData(self.move_action, h)
+                    if d.bActive:
+                        seen = True
+                        best = max(best, math.hypot(d.x, d.y))
+                    b = self.input.getDigitalActionData(self.press_action, h)
+                    if b.bActive:
+                        seen = True
+                        if b.bState:
+                            best = 1.0
+                return best if seen else None
             except Exception:  # noqa: BLE001
-                pass
+                return None
 
     def buzz_pattern(self, hands="LRLR", total_s=1.0, pulse_s=0.15, amplitude=0.6):
         """One short pulse per letter (L or R), spread evenly over total_s, played in the background so
