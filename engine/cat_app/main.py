@@ -111,8 +111,9 @@ def main():
     ap.add_argument("--no-vr", action="store_true", help="no SteamVR dashboard tab")
     ap.add_argument("--no-optimize", action="store_true",
                     help="the old, always-busy behaviour (for comparing in perf.log)")
-    ap.add_argument("--vr-mode", choices=("d3d11", "file"), default="d3d11",
-                    help="how the SteamVR tab's picture reaches SteamVR (default d3d11, like other overlay apps)")
+    ap.add_argument("--vr-mode", choices=("d3d11", "file"),
+                    help="how the SteamVR tab's picture reaches SteamVR: d3d11 (a GPU texture, like other overlay "
+                         "apps) or file; default: vr_mode in my_data/app/app_settings.json (d3d11)")
     ap.add_argument("--vr-picture", help="save a picture of the SteamVR tab to this file and quit")
     ap.add_argument("--window-picture", help="save a picture of the desktop window (each page) and quit")
     args = ap.parse_args()
@@ -187,10 +188,12 @@ def main():
         QTimer(app, interval=1000, timeout=lambda: one.asked() and show_window()).start()
 
     dash = None
+    vr_mode = args.vr_mode or backend._settings.get("vr_mode", "d3d11")  # noqa: SLF001
     if not args.no_vr and not args.window_picture:
+        log(f"SteamVR pictures: {vr_mode}" + (" (no graphics card use by the app)" if vr_mode == "file" else ""))
         try:
             from cat_app.vr_dashboard import VrDashboard
-            dash = VrDashboard(engine, HERE / "qml" / "VrPanel.qml", ICON, log, mode=args.vr_mode, backend=backend,
+            dash = VrDashboard(engine, HERE / "qml" / "VrPanel.qml", ICON, log, mode=vr_mode, backend=backend,
                                optimize=not args.no_optimize, quit_with_steamvr=args.background)
         except Exception:  # noqa: BLE001 - the desktop window still works without it
             log("No SteamVR tab:\n" + traceback.format_exc())
