@@ -17,7 +17,12 @@ the cameras were calibrated, y up, so it never moves with play space tools), fro
   /avatar/parameters/CatRoomYaw             float -1..1  the way it's heading, same units and frame as HeadRoomYaw,
                                             from its movement; kept when it stops (alert.Heading)
   /avatar/parameters/CatHeadingKnown        bool         it has moved enough since it was last found to know it
-All twelve are sent together send_hz times a second (60), changed or not, from their own thread, each
+With vrchat.stick_anchor enabled (experimental, see stick_anchor.py), one more:
+  /avatar/parameters/CatAnchorMode          bool         true: CatAhead, CatRight and HeadRoomX/Z/Yaw are measured
+                                            from a fixed anchor pose (the headset's pose when the play space last
+                                            came to rest) instead of the live headset, and the avatar draws the cat
+                                            from a point it froze in the world when this turned true
+All of them are sent together send_hz times a second (60), changed or not, from their own thread, each
 time with the headset pose read at that moment, so a detection running in the main loop never holds
 them up. The packets are written here (OSC 1.0 over UDP),
 so nothing needs installing.
@@ -87,11 +92,13 @@ class OscCat:
     def _unit(self, metres):
         return max(-1.0, min(1.0, metres / self.range))
 
-    def send(self, offset, visible, kind="normal", near=False, now=0.0, cat_room=None, head_room=None, cat_yaw=None):
+    def send(self, offset, visible, kind="normal", near=False, now=0.0, cat_room=None, head_room=None, cat_yaw=None,
+             anchored=None):
         """Every parameter goes out on every send (OscStream, 60 a second), changed or not, so the avatar
         recovers at once when VRChat resets its parameters (an FBT recalibration, an avatar reload).
         While it's hidden, its last offset and room position are repeated, and the last headset pose
-        while the headset isn't tracked. cat_room: it (x, z) in the room frame; head_room: room_head()."""
+        while the headset isn't tracked. cat_room: it (x, z) in the room frame; head_room: room_head()
+        of the pose the offset is measured from; anchored: CatAnchorMode, or None to leave it out."""
         visible = bool(visible and offset is not None)
         if visible:
             self.last_offset = tuple(self._unit(v) for v in offset)
@@ -115,6 +122,8 @@ class OscCat:
             self.last_cat_yaw = cat_yaw / 180.0
         self._send("CatRoomYaw", self.last_cat_yaw)
         self._send("CatHeadingKnown", cat_yaw is not None)
+        if anchored is not None:
+            self._send("CatAnchorMode", bool(anchored))
 
     def close(self):
         self.send(None, False)
@@ -125,8 +134,9 @@ class OscStream:
     """Sends at send_hz from a thread of its own. The main loop hands it its latest position with
     set_cat(); each send reads the headset pose right then and uses that one pose for every parameter."""
 
-    def __init__(self, osc, vr, hz, log=None):
-        self.osc, self.vr, self.period, self.log = osc, vr, 1.0 / hz, log
+    def __init__(self, osc, vr, hz, log=None, anchor=None):
+        """anchor: a stick_anchor.StickAnchor, or None to measure from the live headset only."""
+        self.osc, self.vr, self.period, self.log, self.anchor = osc, vr, 1.0 / hz, log, anchor
         self.lock = threading.Lock()
         self.cat = (None, False, "normal", False, None, None)
         self.running = True
@@ -148,16 +158,21 @@ class OscStream:
                 with self.lock:
                     cat_cam, visible, kind, near, raw_to_cam, yaw = self.cat
                 hmd = self.vr.headset()  # the newest pose, read for this send
+                ref, anchored = hmd, None
+                if self.anchor is not None and self.anchor.enabled:
+                    stamp = self.anchor.update(time.monotonic(), hmd, self.vr.sticks(), self.vr.raw_to_standing())
+                    anchored = stamp is not None
+                    if anchored:
+                        ref = stamp  # measured from the anchor pose, which the avatar froze in the world
                 off = cat_room = head_room = None
-                if hmd is not None and raw_to_cam is not None:
-                    hmd_room = raw_to_cam @ hmd
-                    head_room = room_head(hmd_room)
+                if ref is not None and raw_to_cam is not None:
+                    head_room = room_head(raw_to_cam @ ref)
                     if cat_cam is not None:
                         cam_to_raw = np.linalg.inv(raw_to_cam)
-                        off = head_offset(cam_to_raw[:3, :3] @ cat_cam + cam_to_raw[:3, 3], hmd)
+                        off = head_offset(cam_to_raw[:3, :3] @ cat_cam + cam_to_raw[:3, 3], ref)
                         cat_room = (float(cat_cam[0]), float(cat_cam[2]))
                 self.osc.send(off, visible, kind, near, time.monotonic(), cat_room=cat_room, head_room=head_room,
-                              cat_yaw=yaw)
+                              cat_yaw=yaw, anchored=anchored)
             except Exception as e:  # noqa: BLE001  keep sending; one bad pose read shouldn't stop the avatar
                 if self.log is not None and not warned:
                     self.log.warning("OSC send failed (%s); still trying", e)

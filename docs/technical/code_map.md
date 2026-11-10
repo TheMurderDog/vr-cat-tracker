@@ -88,6 +88,7 @@ saved anchor is always used now.
 | `cat_tracker.watchdog` | entry (started by `run`): the "CAT TRACKER STOPPED" notice if the tracker dies or freezes |
 | `cat_tracker.notice` | draws text notices as PNG files for overlays |
 | `cat_tracker.osc` | the VRChat OSC sender (OSC 1.0 over UDP, written here, no extra package) |
+| `cat_tracker.stick_anchor` | (experimental) head mode or anchored for the VRChat avatar, from the thumbsticks and a steady head |
 | `cat_tracker.osc_test` | entry: a pretend cat 1 m or 2 m ahead, for lining up the avatar prop |
 | `cat_tracker.collect` | `FrameSaver`: training frames with the current model's boxes as first-guess labels |
 | `cat_tracker.hardframes` | `HardSaver`: saves the moments the detector struggled with |

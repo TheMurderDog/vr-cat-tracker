@@ -18,6 +18,7 @@ import numpy as np
 from cat_tracker import anchor as anc
 from cat_tracker import settings
 from cat_tracker.osc import OscCat, OscStream, room_head
+from cat_tracker.stick_anchor import StickAnchor
 from cat_tracker.vrlink import VRLink, billboard, flat
 from core.config import resolve_path
 from core.runlog import start_run
@@ -66,7 +67,11 @@ def main():
     vr.add_overlay("ring", resolve_path(oc["ring"]), oc.get("ring_width_m", 0.55))
     osc = OscCat(cc.get("vrchat", {}) or {})
     hz = float((cc.get("vrchat", {}) or {}).get("send_hz", 60))
-    stream = OscStream(osc, vr, hz, log)
+    sa = StickAnchor((cc.get("vrchat", {}) or {}).get("stick_anchor"), log)
+    if sa.enabled:
+        vr.setup_haptics(resolve_path("engine/cat_tracker/input/actions.json"), log)  # for the thumbsticks
+        log.info("Stick anchor (experimental): ON")
+    stream = OscStream(osc, vr, hz, log, anchor=sa)
     log.info("Test cat: sending to VRChat at %s:%d, %g a second. Keys: 1 = 1 m ahead, 2 = 2 m ahead, q = quit",
              *osc.addr, hz)
 

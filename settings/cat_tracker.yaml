@@ -149,6 +149,15 @@ vrchat:                     # 6_optional_vrchat\3_run_with_vrchat.bat: its posit
   port: 9000                # VRChat's OSC input
   range_m: 4.0              # CatAhead and CatRight are metres divided by this (the avatar must use the same)
   send_hz: 60               # every parameter, this often, each time with the headset pose read right then
+  stick_anchor:             # EXPERIMENTAL: hold the cat's reference point still while the thumbsticks rest (stick_anchor.py)
+    enabled: false          # true only with an avatar prefab that has CatAnchorMode (docs\vrchat_avatar.md)
+    stick_deadzone: 0.2     # a thumbstick counts as pushed past this (0..1)
+    stick_min_s: 0.1        # ...for at least this long, so a brushed stick doesn't count
+    settle_s: 0.3           # after the sticks are let go, wait this long before looking for a steady head
+    still_turn_dps: 15      # steady head: turning slower than this (degrees a second)...
+    still_move_mps: 0.15    # ...and moving slower than this (metres a second)
+    average_s: 0.5          # steady this long; the anchor is the head's average pose over it
+    refresh_s: 30           # while anchored and steady, anchor again this often, for people who join later (0 = off)
 
 capture:                    # 4_teach_it_your_cat\1_capture.bat (or c in a tracker window): frames saved in my_data/captures
   every_s: 2.0              # one frame from each camera this often (10 minutes = 1200 images)
