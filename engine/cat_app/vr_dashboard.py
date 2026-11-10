@@ -10,7 +10,7 @@ away and the desktop window carries on (started in the background, the app close
 """
 
 import ctypes
-import os
+import hashlib
 import time
 from pathlib import Path
 
@@ -25,6 +25,34 @@ W, H = 1280, 800
 TMP = resolve_path("my_data/app/vr_tab")
 APP_KEY = "camera_core.cat_tracker_app"  # the app's SteamVR app key (cat_tracker.install_autostart registers it)
 KEY = APP_KEY + ".tab"                  # the dashboard tab's overlay key
+
+
+class PictureFile:
+    """Picture mode (--vr-mode file): SteamVR loads each picture from a file, and the overlay blinks a little
+    every time it does. So this skips a picture that looks exactly like the last one sent, and takes turns
+    between two files, so a new picture is never written over the one SteamVR may still be reading."""
+
+    def __init__(self, name):
+        self.name = name
+        self.last = None
+        self.turn = 0
+
+    def forget(self):
+        """Call when the overlay is new (or was emptied), so the next picture is sent even if it's the same."""
+        self.last = None
+
+    def send(self, ov, handle, img):
+        """Returns True if a new picture went to SteamVR, False if it was the same as the last one."""
+        digest = hashlib.blake2b(img.constBits(), digest_size=16).digest()
+        if digest == self.last:
+            return False
+        TMP.mkdir(parents=True, exist_ok=True)
+        p = TMP / f"{self.name}_{self.turn}.png"
+        img.save(str(p), "PNG", 1)
+        ov.setOverlayFromFile(handle, str(p))
+        self.last = digest
+        self.turn ^= 1
+        return True
 
 
 class OffscreenQml(QObject):
@@ -119,9 +147,10 @@ class VrDashboard(QObject):
         self.was_visible = False
         # How the tab's picture reaches SteamVR (--vr-mode):
         #   d3d11  (default) a Direct3D 11 texture, like other overlay apps; falls back to "file" if it fails
-        #   file   a picture file SteamVR loads, at most 4 times a second (flickers a little on each update)
+        #   file   a picture file SteamVR loads, at most 4 times a second and only when it changed (see PictureFile)
         self.mode = mode
         self.d3d = None
+        self.picture = PictureFile("vr_tab")
         self.flip_y = True  # SteamVR's overlay mouse y counts up from the bottom
         self.connect_timer = QTimer(self, interval=5000, timeout=self.try_connect)
         self.pump = QTimer(self, interval=11, timeout=self.tick)
@@ -169,6 +198,7 @@ class VrDashboard(QObject):
             ov.setOverlayFlag(self.handle, openvr.VROverlayFlags_SendVRSmoothScrollEvents, True)
             ov.setOverlayFromFile(self.thumb, self.icon)
             self.panel.dirty = True
+            self.picture.forget()
             self._upload()
             self.pump.start()
             self.log("Connected to SteamVR: the Cat Tracker tab is in the dashboard")
@@ -258,14 +288,8 @@ class VrDashboard(QObject):
         if time.monotonic() - self.last_frame < 0.25:
             return False
         img = self.panel.render()
-        p = TMP / "vr_tab.png"
-        p.parent.mkdir(parents=True, exist_ok=True)
-        tmp = TMP / "vr_tab_new.png"
-        img.save(str(tmp), "PNG", 1)
-        os.replace(tmp, p)
-        self.ov.setOverlayFromFile(self.handle, str(p))
         self.last_frame = time.monotonic()
-        return True
+        return self.picture.send(self.ov, self.handle, img)
 
     def _close_d3d(self):
         if self.d3d is not None:
