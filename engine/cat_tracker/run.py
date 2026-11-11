@@ -319,7 +319,7 @@ def main():
     if check is not None and raw_to_cam is not None:
         check.startup(vr)  # asks for a re-anchor at once if SteamVR's base station map changed
     icons = {k: resolve_path(oc[k]) for k in ("icon", "icon_close", "icon_rest", "icon_move") if oc.get(k)}
-    osc = OscCat(cc.get("vrchat", {}) or {}) if args.osc and vr is not None else None
+    osc = OscCat(cc.get("vrchat", {}) or {}, lc) if args.osc and vr is not None else None
     if args.osc and vr is None:
         log.warning("--osc needs SteamVR (its offset is measured from your headset); not sending")
     stream = None

@@ -3,7 +3,8 @@
 This shows a stand-in cat on your VRChat avatar at the spot where the cat tracker sees your real cat. You can see it in VR, and so can everyone else in the instance. The tracker sends the cat's position, state and heading over OSC. This drop-in prefab turns those values into a cat on the floor that:
 
 - shows when the cat is seen and hides when it isn't,
-- stands at the right distance and side from your head (flat on the floor, so it doesn't follow your head tilt or your eyes),
+- stands at the right distance and side from your head (it doesn't follow your head tilt or your eyes),
+- sits as high off the floor as the cameras see the cat (on a sofa or a bed, for example), when two or more cameras see it,
 - locks in place in the world while you stand still, so it doesn't swim when you look around, and follows again when you move,
 - optionally (experimental) holds still in the world while your thumbsticks rest, even while you walk around your room for real ([Play-space anchor](#play-space-anchor-experimental)),
 - faces the way the cat is heading once the tracker knows it, and faces you until then,
@@ -37,8 +38,8 @@ The package ships with a simple placeholder cat (a low-poly stick figure). Swap 
 1. Import `CatTracker.unitypackage` into your avatar project (VRChat SDK and VRCFury already installed).
 2. Drag `Cat Tracker.prefab` onto your avatar's root object in the Hierarchy (directly under the object with the Avatar Descriptor). Leave its position, rotation and scale at zero, zero and one.
 3. That's it. VRCFury adds the FX layers and parameters when you enter Play mode or upload. You don't need to edit your FX controller, menu or parameter list.
-4. Check the avatar's synced parameter budget: the prefab adds **44 bits**.
-5. If you're updating from an older version of the package, use Reset Config in VRChat's OSC menu after uploading, so VRChat picks up the new parameter.
+4. Check the avatar's synced parameter budget: the prefab adds **52 bits**.
+5. If you're updating from an older version of the package, use Reset Config in VRChat's OSC menu after uploading, so VRChat picks up the new parameters.
 
 How it fits on your avatar: VRCFury's **Armature Link** snaps `CatHeadLink` onto your avatar's Head bone (position only), and `CatHeadRef` inside it sits at your view position. Everything else stays under the prefab.
 
@@ -50,6 +51,7 @@ These match the names, types and units sent by the tracker's `osc.py`. All of th
 |---|---|---|---|
 | `CatAhead` | Float -1..1 | yes | Metres ahead of the headset (its facing, ignoring tilt) ÷ `range_m` |
 | `CatRight` | Float -1..1 | yes | Metres to the headset's right ÷ `range_m` |
+| `CatUp` | Float 0..1 | yes | Metres from the floor up to the cat's feet ÷ `range_m` (0 when only one camera sees it) |
 | `CatVisible` | Bool | yes | The cat is seen, or was seen recently |
 | `CatState` | Int | yes | 0 normal (Standing), 1 resting (Sleeping), 2 moving (Walking) |
 | `CatNear` | Bool | yes | The tracker is warning that the cat is close (Alert pose) |
@@ -83,7 +85,7 @@ Limits:
 The prefab assumes the tracker's default `range_m: 4.0`, an avatar at scale 1, and a 1 m offset showing as 1 m. If the cat shows up too close or too far:
 
 1. Start SteamVR and VRChat (OSC on) and close the real tracker so the two don't both send.
-2. Run `6_optional_vrchat\2_osc_test.bat`. It places a pretend cat 1 m straight ahead of you and shows a ring on the floor at that spot in SteamVR. Press **2** to move it to 2 m and **1** to move it back.
+2. Run `6_optional_vrchat\2_osc_test.bat`. It places a pretend cat 1 m straight ahead of you and shows a ring on the floor at that spot in SteamVR. Press **2** to move it to 2 m and **1** to move it back. Press **u** to lift it 0.5 m, then 1 m, then back to the floor, to check the height.
 3. If the stand-in cat sits short of or past the ring, change the scale of `Cat Tracker/CatRoot` in Unity by the same ratio (ring at 1 m, cat at 0.8 m → multiply by 1.25). Then set `Cat Tracker/CatSmoothed` to 1 divided by that number, so the cat itself keeps its size. Re-upload and check again at both 1 m and 2 m.
 4. If you change `range_m` in `settings/cat_tracker.yaml`, multiply the `CatRoot` scale by `new range_m ÷ 4`, and set `CatSmoothed` to 1 divided by the new `CatRoot` scale, as in step 3.
 
@@ -112,8 +114,8 @@ Keep materials light: this is a prop that other players render too.
 | PhysBones | 1 (2 transforms, no colliders), used to smooth movement |
 | Contacts | 2 (1 sender, 1 receiver), used for the world lock |
 | Constraints | 7, plus whatever your own model brings |
-| FX layers | 9 (7 tracker, 2 pose); all states have Write Defaults off |
-| Synced parameter bits | 44 |
+| FX layers | 10 (8 tracker, 2 pose); all states have Write Defaults off |
+| Synced parameter bits | 52 |
 
 ## Known limits
 
@@ -125,6 +127,7 @@ Keep materials light: this is a prop that other players render too.
 - Remote players see the cat with normal network latency and smoothing. Fast movement looks smoother but slightly late.
 - Heading is blended from 22.5° steps and sent as an 8-bit float (about 1.4° per step), so facing is close but not exact.
 - When the wearer looks straight up or down, the tracker can't measure "ahead", so the cat hides for that moment.
+- **Height** comes from the cameras' 3D estimate of the cat's middle, minus a typical body height (`locate.body_height_m`, 15 cm), and counts as the floor below 10 cm (`vrchat.height_snap_m`). With only one camera on the cat, it's placed on the floor. A box whose floor point lands outside the room (a cat high up near a wall, seen from across the room) is dropped, the same check that drops pictures on the wall. The height is roughly where the cameras think the cat is, and uses the same distance scale as `CatRoot` (see [Distance scale](#distance-scale-calibration)).
 
 ## License
 

@@ -3,7 +3,8 @@ where you stand, sent to VRChat with every parameter exactly as the tracker send
 with the same SteamVR ring and icon. No cameras or GPU needed; it uses the saved anchor.
 
 The spot is fixed in the room once placed, so you can walk around it and check that the snake stays
-on the ring. In this window:  1 = place it 1 m ahead of you now,  2 = 2 m ahead,  q = quit.
+on the ring. In this window:  1 = place it 1 m ahead of you now,  2 = 2 m ahead,
+u = lift it off the floor (0, 0.5, 1 m, then back to the floor; CatUp),  q = quit.
 Its heading points the way you faced when it was placed (CatRoomYaw = your HeadRoomYaw then).
 
     2_osc_test.bat          (or 2_osc_test.bat --distance 2)
@@ -65,17 +66,19 @@ def main():
         return 1
     vr.add_overlay("icon", resolve_path(oc["icon"]), oc.get("icon_width_m", 0.28))
     vr.add_overlay("ring", resolve_path(oc["ring"]), oc.get("ring_width_m", 0.55))
-    osc = OscCat(cc.get("vrchat", {}) or {})
+    lc = cc.get("locate", {}) or {}
+    osc = OscCat(cc.get("vrchat", {}) or {}, lc)
+    body_h = float(lc.get("body_height_m", 0.15))
     hz = float((cc.get("vrchat", {}) or {}).get("send_hz", 60))
     sa = StickAnchor((cc.get("vrchat", {}) or {}).get("stick_anchor"), log)
     if sa.enabled:
         vr.setup_haptics(resolve_path("engine/cat_tracker/input/actions.json"), log)  # for the thumbsticks
         log.info("Stick anchor (experimental): ON")
     stream = OscStream(osc, vr, hz, log, anchor=sa)
-    log.info("Test cat: sending to VRChat at %s:%d, %g a second. Keys: 1 = 1 m ahead, 2 = 2 m ahead, q = quit",
+    log.info("Test cat: sending to VRChat at %s:%d, %g a second. Keys: 1 = 1 m ahead, 2 = 2 m ahead, u = lift, q = quit",
              *osc.addr, hz)
 
-    spot, want = None, args.distance
+    spot, want, lift = None, args.distance, 0.0
     try:
         while True:
             if want is not None:
@@ -88,13 +91,16 @@ def main():
                 k = msvcrt.getwch().lower()
                 if k in "12":
                     want = float(k)
+                elif k == "u":
+                    lift = {0.0: 0.5, 0.5: 1.0}.get(lift, 0.0)
+                    log.info("Test cat %.1f m above the floor", lift)
                 elif k == "q":
                     break
             if vr.quit_requested():
                 break
             if spot is not None:
                 x, z, yaw = spot
-                cat_cam = np.array([x, floor_y + 0.15, z])  # its middle, as the tracker reports it
+                cat_cam = np.array([x, floor_y + body_h + lift, z])  # its middle, as the tracker reports it
                 stream.set_cat(cat_cam, True, "normal", False, raw_to_cam, yaw)
                 M = vr.raw_to_standing()
                 to_standing = M @ cam_to_raw

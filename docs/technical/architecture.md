@@ -49,7 +49,7 @@ Each loop of `cat_tracker.run`:
    letterboxed to `detector.input`, and maps boxes back to full-frame pixels. It runs at `detector.rate_hz` while the
    cat is moving or close, and at `idle_rate_hz` otherwise.
 3. **Locate.** `cat_tracker.locate` turns boxes into one 3D point in calibration space. Boxes whose floor point is
-   outside the room (the box around the cameras plus `room_margin_m`) or higher than `max_height_m` are dropped.
+   outside the room (the box around the cameras plus `room_margin_m`), or higher than `max_height_m` if it's set, are dropped.
    With two or more cameras, box centres are triangulated with `fusion.triangulate.Rig`, which drops a view that
    disagrees. With one camera, the ray through the bottom middle of the box meets the floor plane.
 4. **Filter.** `fusion.filters` (jump gate, then One Euro filter) steadies the point. `filter.confirm_frames`

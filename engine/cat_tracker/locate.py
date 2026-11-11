@@ -94,7 +94,7 @@ def locate(rig, boxes_all, lc, bounds):
     projects to the floor beyond that wall. Returns (position (3,), cameras used,
     "triangulated" | "floor" | None, the box used per camera or None)."""
     floor_y = float(lc.get("floor_y_m", 0.0))
-    max_h = float(lc.get("max_height_m", 1.0))
+    max_h = float(lc.get("max_height_m", 0.0))  # 0: no upper limit
     picked = [next((b for b in boxes if _inside(_foot(rig, c, b, floor_y), bounds)), None)
               for c, boxes in enumerate(boxes_all)]
     views = [None if b is None else (np.array([[(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]]), np.array([b[4]]))
@@ -104,7 +104,7 @@ def locate(rig, boxes_all, lc, bounds):
         pts, _, used, _ = triangulate(rig, views, 0.0, float(lc.get("max_reprojection_px", 40)),
                                       int(lc.get("min_views", 2)), n_k=1)
         X = pts[0]
-        if np.isfinite(X).all() and _inside(X, bounds) and floor_y - 0.2 <= X[1] <= floor_y + max_h:
+        if np.isfinite(X).all() and _inside(X, bounds) and floor_y - 0.2 <= X[1] and (max_h <= 0 or X[1] <= floor_y + max_h):
             return X, int(used[0]), "triangulated", picked
     seen = [c for c, b in enumerate(picked) if b is not None]
     if not seen:
