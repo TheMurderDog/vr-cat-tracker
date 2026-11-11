@@ -36,6 +36,22 @@ def main():
     assert ov.sent == ["vr_tab_0.png", "vr_tab_1.png", "vr_tab_0.png"], ov.sent
     pic.forget()  # a new overlay: send it even though it looks the same
     assert pic.send(ov, 1, picture("red"))
+
+    # picture mode on the tab: pointing alone draws nothing new; a click is drawn once, after it settles
+    import time
+    from cat_app.vr_dashboard import OffscreenQml
+    from PySide6.QtQml import QQmlEngine
+    qml = Path(tempfile.mkdtemp()) / "t.qml"
+    qml.write_text("import QtQuick\nRectangle { width: 100; height: 100; color: 'black' }\n")
+    panel = OffscreenQml(QQmlEngine(), qml, size=(100, 100))
+    panel.calm = True
+    panel.render()
+    panel.mouse("move", 10, 10)
+    assert not panel.needs_frame(time.monotonic()), "just pointing: no new picture"
+    panel.mouse("down", 10, 10)
+    panel.mouse("up", 10, 10)
+    assert not panel.needs_frame(time.monotonic()), "waits for the click to settle"
+    assert panel.needs_frame(time.monotonic() + 0.3), "then draws it once"
     print("ok")
 
 

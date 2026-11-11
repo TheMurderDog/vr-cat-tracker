@@ -74,6 +74,10 @@ class OffscreenQml(QObject):
         self.root.setHeight(self.h)
         self.dirty = True
         self.busy_until = 0.0  # after a click or hover, keep redrawing briefly for the button's feedback
+        # picture mode (calm): every new picture makes SteamVR blink, so pointing alone changes nothing (no hover
+        # highlight) and a click is drawn once, after it has settled, instead of for the press and the release
+        self.calm = False
+        self.settle_at = 0.0
         if backend is not None:
             backend.statusChanged.connect(self._mark)
             backend.styleChanged.connect(self._mark)
@@ -89,6 +93,8 @@ class OffscreenQml(QObject):
         self.dirty = True
 
     def needs_frame(self, now):
+        if self.calm:
+            return self.dirty and now >= self.settle_at
         return self.dirty or now < self.busy_until
 
     def render(self):
@@ -101,6 +107,8 @@ class OffscreenQml(QObject):
     def mouse(self, kind, x, y, button=Qt.MouseButton.LeftButton):
         p = QPointF(x, y)
         self.last = p
+        if kind == "move" and self.calm and self.buttons == Qt.MouseButton.NoButton:
+            return  # just pointing: SteamVR draws the laser dot; a hover highlight would only cost a blink
         if kind == "move":
             ev = QMouseEvent(QEvent.Type.MouseMove, p, p, Qt.MouseButton.NoButton, self.buttons, Qt.KeyboardModifier.NoModifier)
         elif kind == "down":
@@ -112,6 +120,7 @@ class OffscreenQml(QObject):
         QCoreApplication.sendEvent(self.win, ev)
         self.dirty = True
         self.busy_until = time.monotonic() + 0.3
+        self.settle_at = time.monotonic() + 0.25
 
     def leave(self):
         QCoreApplication.sendEvent(self.win, QEvent(QEvent.Type.Leave))
@@ -342,7 +351,9 @@ class VrDashboard(QObject):
         now = time.monotonic()
         # while open: redraw only when something changed (at most 20 a second), plus every 0.3 s while the
         # status banner blinks (only for a warning, or while the tracker starts)
-        blinking = self.backend is not None and (self.backend.level == "alert" or self.backend.starting)
+        blinking = self.backend is not None and (self.backend.level == "alert" or self.backend.starting) \
+            and self.mode != "file"  # in picture mode the banner stays still: each blink would be a reload
+        self.panel.calm = self.mode == "file"
         if vis and (self.panel.needs_frame(now) or not self.was_visible or (blinking and now - self.last_frame > 0.3)) \
                 and now - self.last_frame > 1 / 20:
             try:
