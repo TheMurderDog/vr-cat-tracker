@@ -181,11 +181,14 @@ class CatTrack:
         self.streak = 0
         self.last_seen = None
         self.state = "hidden"
+        self.jumped = False
 
     def update(self, X, now):
         """X: this detection's position or None. Returns (position or None, state, alpha 0-1)."""
+        self.jumped = False  # the gate set this detection aside as too big a jump (rate.py looks more often then)
         if X is not None:
             X = self.gate(np.asarray(X, np.float64)[None])[0]
+            self.jumped = not np.isfinite(X).all()
         if X is not None and np.isfinite(X).all():
             self.streak += 1
             self.pos = self.filt(X[None], now)[0]

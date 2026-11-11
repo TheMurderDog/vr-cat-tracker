@@ -188,7 +188,7 @@ near, `idle_rate_hz` 3 a second while it's still. The worst case is a sleeping c
 | --- | --- |
 | the tripwire's next check | up to 33 ms |
 | detection and placing it | about 30 ms |
-| seen as moving | about 50 ms at 3 m/s (the tripwire keeps it looking meanwhile) |
+| seen as moving | about 50 ms at 3 m/s (the tripwire keeps it looking meanwhile; see the 2026-11-11 note below for slower starts) |
 | shown in the headset | up to 33 ms |
 | **worst case** | **about 0.15 s, about 0.45 m at 3 m/s** |
 
@@ -196,6 +196,30 @@ These are estimates, added up from parts measured on the test PC, not one end-to
 PCs and cameras will differ. They're the tracker's own delay only: you still need time to see the warning and react. The cost: while the cat sleeps
 far from you, the same 3 looks a second plus the tripwire (under 1% of a CPU core); within 3 m of you, 8 a second
 (about 17% of the GPU's time on the test PC instead of 6%).
+
+**2026-11-11: back to the full rate sooner (`cat_tracker/rate.py`).** The rule above had gaps that kept the idle
+rate too long. A tripwire wake ran one extra look but didn't switch to the full rate, so a cat that started slowly
+waited until its speed over the last second passed `still_speed`. A cat "last seen" (often behind you when it's
+close) dropped to the idle rate, and so did one whose new position the filter set aside as a jump. Now the full rate
+comes back at once when any of these happen: it moves `wake_move_m` from where it settled, it's faster than
+`still_speed`, it's within `full_rate_within_m` or the warning is on, it's "last seen", something is found while nothing
+is shown, the filter sets aside a jump, or the tripwire wakes. It then stays at least `full_rate_hold_s`, so it doesn't
+flick between rates. A single look that misses it while it's shown gets one quick look again. The detection beat
+also keeps its rhythm now (the 30-a-second loop had rounded each gap up, so 8 a second ran at about 7).
+
+In a simulation (`engine/tests/test_detection_rate.py`: the real filter and speed code, made-up positions with 2 cm
+of jitter, the tripwire stood in for by "moved 3 cm"; worst of 20 runs, not a test on a real cat):
+
+| Asleep far from you, then | before | now |
+| --- | --- | --- |
+| walks off at 0.3 m/s | 0.73 s to the full rate (0.22 m) | 0.23 s (0.07 m) |
+| creeps off at 0.12 m/s | 1.93 s (0.23 m) | 0.53 s (0.06 m) |
+| walks off at 0.3 m/s, tripwire doesn't notice | 0.83 s (0.25 m) | 0.67 s (0.20 m) |
+| bolts at 3 m/s | 0.10 s | 0.03 s |
+
+A cat 2 m from you that the cameras lose ("last seen"): before 2.6 looks a second, now about 8. Asleep far from you,
+it still uses the idle rate (3 looks a second), so the GPU saving is kept for that case. The cost is more full-rate
+time around a cat that is moving, close, or hard to see. Real rooms, cameras and cats will differ.
 
 ## While the tracker runs
 

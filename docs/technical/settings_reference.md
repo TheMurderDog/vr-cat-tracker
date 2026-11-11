@@ -152,6 +152,8 @@ Paths are relative to the top folder unless absolute.
 | `detector.idle_rate_hz` | `3` | ...and while it's still, asleep or out of the room, which is most of the time. Its marker still follows your head smoothly either way, see overlay.update_hz |
 | `detector.tripwire_change` | `6.0` | EXPERIMENTAL: at the idle rate, the cat's spot is checked 30 times a second between detections; this much change (grey levels) runs the detector at once (cat_tracker/tripwire.py) |
 | `detector.full_rate_within_m` | `3.0` | EXPERIMENTAL: this close to you: the full rate, still or not |
+| `detector.full_rate_hold_s` | `3.0` | EXPERIMENTAL: once something asks for the full rate (it moves, it's close, it's "last seen", the tripwire), it stays at least this long (cat_tracker/rate.py) |
+| `detector.wake_move_m` | `0.08` | EXPERIMENTAL: at the idle rate, it moving this far from where it settled goes back to the full rate |
 | `locate` |  |  |
 | `locate.min_views` | `2` | cameras that must agree to triangulate it |
 | `locate.max_reprojection_px` | `40` | box centres seen from different sides are not the exact same point, so this is loose |
