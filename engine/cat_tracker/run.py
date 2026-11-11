@@ -334,15 +334,15 @@ def main():
     floor_y = float(lc.get("floor_y_m", 0.0))
     # detections per second: the full rate only while it's moving or close to you; it's mostly asleep
     # or out of the room, and then a slower rate is plenty (and saves the GPU)
-    fast_period = 1.0 / float(dc.get("rate_hz", 8))
-    idle_period = 1.0 / float(dc.get("idle_rate_hz", 3))
-    det_period = idle_period
+    # (rate.py: when unsure, it goes back to the full rate at once)
+    from cat_tracker.rate import DetectionRate
+    rate = DetectionRate(dc, oc)
+    det_period = rate.period
     # at the idle rate, a cheap check of the cat's spot between detections runs the detector at once when it moves
     from cat_tracker.tripwire import Tripwire
     tripwire = Tripwire(float(dc.get("tripwire_change", 6.0)))
-    full_within = float(dc.get("full_rate_within_m", 3.0))  # this close to you: the full rate, still or not
     last_dist = dist = None
-    wakes_logged = 0
+    wakes_logged = switches_logged = 0
     period = 1.0 / float(oc.get("update_hz", 30))
     last_det = -1e9
     snap_dir = resolve_path(cfg["logging"]["dir"]) / "snapshots"
@@ -390,10 +390,11 @@ def main():
             # detection runs at detector.rate_hz (a few times a second is plenty for a cat); the overlays,
             # edge arrow and OSC offset follow your head at overlay.update_hz using its last position
             fresh = time.monotonic() - last_det >= det_period
-            if not fresh and det_period == idle_period and state in ("seen", "lost"):
+            if not fresh and rate.idle_now and state in ("seen", "lost"):
                 quick = [c.latest(rotated=False) for c in cams]
                 if tripwire.changed([q[0] if q is not None else None for q in quick]):
                     fresh = True  # its spot changed: look now, not at the next idle tick
+                    rate.woke(time.monotonic())  # ...and keep looking at the full rate for a while
             if fresh:
                 items = [c.latest(rotated=False) for c in cams]
                 stale = health.cameras(items, time.monotonic())
@@ -415,7 +416,10 @@ def main():
                         break
                     time.sleep(0.05)
                     continue
-                last_det = time.monotonic()
+                # on a steady beat (the loop runs 30 a second, so "now" would round every gap up a loop: 7 a second,
+                # not 8); an early look (the tripwire) starts the beat again from now
+                t_now = time.monotonic()
+                last_det = min(t_now, max(last_det + det_period, t_now - det_period))
                 td = time.perf_counter()
                 try:
                     boxes_all = det([it[0] for it in items])
@@ -462,10 +466,9 @@ def main():
                     T = check.step(items, rig, vr, raw_to_cam, now)
                     if T is not None:  # it quietly corrected the anchor (and saved it)
                         raw_to_cam, cam_to_raw = T, np.linalg.inv(T)
-                busy = state == "seen" and (motion.speed > float(oc.get("still_speed", 0.1)) or close or
-                                            (last_dist is not None and last_dist < full_within))
                 tripwire.set([it[0] for it in items], picked if state in ("seen", "lost") else [None] * len(items))
-                det_period = fast_period if busy else idle_period
+                det_period = rate.update(now, state, pos, motion.speed, last_dist, close, X is not None,
+                                         seen_once=track.streak > 0, jumped=track.jumped, raw=X)
 
             close = False
             last_dist = dist if dist is not None else last_dist
@@ -624,6 +627,10 @@ def main():
                 log.info("%.0f detections/s, detector %.1f ms | cameras seeing it %.1f/4 | shown %.0f%% of the time | found by %s",
                          n / (now - last_log), np.mean(stats["det_ms"]), np.mean(stats["views"]), 100 * stats["seen"] / n,
                          stats["how"] or "")
+                if rate.switches != switches_logged:
+                    log.info("  full rate: %d switches back from the idle rate (last because: %s)",
+                             rate.switches - switches_logged, rate.reason)
+                    switches_logged = rate.switches
                 if tripwire.wakes != wakes_logged:
                     log.info("  tripwire: %d early looks (its spot changed between idle detections)",
                              tripwire.wakes - wakes_logged)

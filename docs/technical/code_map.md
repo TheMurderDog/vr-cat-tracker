@@ -80,6 +80,8 @@ saved anchor is always used now.
 | `cat_tracker.run` | entry: the tracker (cameras, detect, locate, anchor, overlays, alerts, capture, hard frames, OSC) |
 | `cat_tracker.settings` | loads both settings files into one config (`cfg["cat"]` holds the tracker's); `cameras.fps`: `full` (default) keeps settings/cameras.yaml's speed, the experimental `auto` asks for `AUTO_FPS` (with `Camera.open` falling back if those frames misbehave), a forced number is raised to `MIN_FPS` if lower |
 | `cat_tracker.detector` | YOLO11 on ONNX Runtime, every camera in one GPU batch |
+| `cat_tracker.rate` | `DetectionRate`: the full or the idle detection rate, back to the full rate at once when unsure |
+| `cat_tracker.tripwire` | between idle looks, a cheap check of the cat's spot that runs the detector early |
 | `cat_tracker.locate` | boxes to one 3D point: triangulation or floor projection, room and height checks, weak-box matching |
 | `cat_tracker.anchor` | the fit from calibration space to SteamVR raw space, its save file (with the base station map id) and `AnchorCheck`, which corrects it quietly while you play |
 | `cat_tracker.vrlink` | SteamVR side: headset pose, raw-to-standing transform, overlays, haptics through SteamVR Input |

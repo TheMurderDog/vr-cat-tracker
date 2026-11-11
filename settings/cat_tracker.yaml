@@ -36,6 +36,9 @@ detector:                   # the stock COCO model to start (cats are class 15; 
   tripwire_change: 6.0      # at the idle rate, its spot is checked 30 times a second between detections: this
                             # much change (grey levels) runs the detector at once (a sudden start isn't missed)
   full_rate_within_m: 3.0   # this close to you: the full rate, still or not
+  full_rate_hold_s: 3.0     # once something asks for the full rate (it moves, it's close, it's "last seen", the
+                            # tripwire), it stays at least this long, so it doesn't flick between the two rates
+  wake_move_m: 0.08         # at the idle rate, it moving this far from where it settled goes back to the full rate
 
 locate:
   min_views: 2              # cameras that must agree to triangulate it

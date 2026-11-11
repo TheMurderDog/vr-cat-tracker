@@ -46,8 +46,8 @@ Each loop of `cat_tracker.run`:
    emulated (every 4th frame kept) gave a newest-frame age of 17 ms (5 ms at 122) and 15 ms between cameras
    (6 ms at 122), as the simulation assumed.
 2. **Detect.** `cat_tracker.detector` sends every camera's frame through YOLO11 on ONNX Runtime (CUDA) in one batch,
-   letterboxed to `detector.input`, and maps boxes back to full-frame pixels. It runs at `detector.rate_hz` while the
-   cat is moving or close, and at `idle_rate_hz` otherwise.
+   letterboxed to `detector.input`, and maps boxes back to full-frame pixels. It runs at `idle_rate_hz` only while the
+   cat is seen, still and far from you, and at `detector.rate_hz` otherwise (`cat_tracker.rate`).
 3. **Locate.** `cat_tracker.locate` turns boxes into one 3D point in calibration space. Boxes whose floor point is
    outside the room (the box around the cameras plus `room_margin_m`) or higher than `max_height_m` are dropped.
    With two or more cameras, box centres are triangulated with `fusion.triangulate.Rig`, which drops a view that
