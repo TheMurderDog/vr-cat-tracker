@@ -158,7 +158,7 @@ Paths are relative to the top folder unless absolute.
 | `locate.floor_y_m` | `0.0` | floor height in calibration space (room.json was solved in SteamVR standing space) |
 | `locate.body_height_m` | `0.15` | height of a cat's middle when only one camera sees it (placed on the floor) |
 | `locate.floor_depth_m` | `0.2` | with one camera, its middle is this much further away than the bottom edge of its box |
-| `locate.max_height_m` | `1.0` | higher than this (top of a dresser or desk) is a picture on the wall, not the cat |
+| `locate.max_height_m` | `0` | drop a 3D point higher than this above the floor (0 = no limit: a trained model rarely boxes wall pictures) |
 | `locate.room_margin_m` | `0.15` | the room = the box around the four cameras plus this |
 | `locate.outline_radius_m` | `0.22` | its outline when projecting where it should appear in a camera: a cylinder this wide... |
 | `locate.outline_half_height_m` | `0.15` | ...and twice this tall |
@@ -246,8 +246,10 @@ Paths are relative to the top folder unless absolute.
 | `vrchat` |  | 6_optional_vrchat\3_run_with_vrchat.bat: its position for the avatar's cat prop (see osc.py) |
 | `vrchat.host` | `127.0.0.1` |  |
 | `vrchat.port` | `9000` | VRChat's OSC input |
-| `vrchat.range_m` | `4.0` | CatAhead and CatRight are metres divided by this (the avatar must use the same) |
+| `vrchat.range_m` | `4.0` | CatAhead, CatRight and CatUp are metres divided by this (the avatar must use the same) |
 | `vrchat.send_hz` | `60` | every parameter, this often, each time with the headset pose read right then |
+| `vrchat.send_height` | `true` | also send CatUp, how high it is off the floor (an avatar without CatUp ignores it) |
+| `vrchat.height_snap_m` | `0.1` | CatUp counts lower than this as the floor, so it doesn't bob with the triangulation |
 | `vrchat.stick_anchor` |  | EXPERIMENTAL: hold the cat's reference point still while the thumbsticks rest (stick_anchor.py) |
 | `vrchat.stick_anchor.enabled` | `false` | true only with an avatar prefab that has CatAnchorMode (docs\vrchat_avatar.md) |
 | `vrchat.stick_anchor.stick_deadzone` | `0.2` | a thumbstick counts as pushed past this (0..1); a pressed button also counts (not the grip or a trackpad) |

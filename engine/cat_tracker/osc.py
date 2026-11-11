@@ -7,6 +7,9 @@ play space, thumbstick, turns or teleports have moved you in VRChat:
   /avatar/parameters/CatVisible bool         it is seen, or was seen recently (same fade as the overlay)
   /avatar/parameters/CatState   int          0 normal, 1 resting (still 2 minutes or more), 2 moving (same as the icons)
   /avatar/parameters/CatNear    bool         the tracker is warning you about it (the edge arrow is showing)
+  /avatar/parameters/CatUp      float 0..1   how high its feet are above the floor, metres / range_m: its middle's
+                                height minus locate.body_height_m, 0 below vrchat.height_snap_m. Only when 2+
+                                cameras see it; one camera puts it on the floor (vrchat.send_height: false = off)
 And in the room's own fixed floor frame (the camera calibration: SteamVR standing space at the time
 the cameras were calibrated, y up, so it never moves with play space tools), from the same headset pose sample:
   /avatar/parameters/CatRoomX, CatRoomZ     float -1..1  its position on the floor, metres / range_m
@@ -71,9 +74,16 @@ def head_offset(cat_raw, hmd_raw):
 
 
 class OscCat:
-    def __init__(self, vc):
+    def __init__(self, vc, lc=None):
+        """vc: the vrchat settings; lc: the locate settings (floor height and body height, for CatUp)."""
+        lc = lc or {}
         self.addr = (vc.get("host", "127.0.0.1"), int(vc.get("port", 9000)))
         self.range = float(vc.get("range_m", 4.0))
+        self.send_height = bool(vc.get("send_height", True))
+        self.snap = float(vc.get("height_snap_m", 0.1))
+        self.floor_y = float(lc.get("floor_y_m", 0.0))
+        self.body_h = float(lc.get("body_height_m", 0.15))
+        self.last_up = 0.0
         self.prefix = vc.get("prefix", "/avatar/parameters/")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.last_offset = (0.0, 0.0)
@@ -92,18 +102,27 @@ class OscCat:
     def _unit(self, metres):
         return max(-1.0, min(1.0, metres / self.range))
 
+    def height(self, middle_y):
+        """Metres from the floor up to its feet, from the height of its middle in the room frame (y up).
+        Small values count as the floor, so a cat on the floor doesn't bob with the triangulation."""
+        up = float(middle_y) - self.floor_y - self.body_h
+        return up if up >= self.snap else 0.0
+
     def send(self, offset, visible, kind="normal", near=False, now=0.0, cat_room=None, head_room=None, cat_yaw=None,
-             anchored=None):
+             anchored=None, up=None):
         """Every parameter goes out on every send (OscStream, 60 a second), changed or not, so the avatar
         recovers at once when VRChat resets its parameters (an FBT recalibration, an avatar reload).
         While it's hidden, its last offset and room position are repeated, and the last headset pose
         while the headset isn't tracked. cat_room: it (x, z) in the room frame; head_room: room_head()
-        of the pose the offset is measured from; anchored: CatAnchorMode, or None to leave it out."""
+        of the pose the offset is measured from; anchored: CatAnchorMode, or None to leave it out;
+        up: height() in metres, or None to repeat the last one."""
         visible = bool(visible and offset is not None)
         if visible:
             self.last_offset = tuple(self._unit(v) for v in offset)
             if cat_room is not None:
                 self.last_cat_room = tuple(self._unit(v) for v in cat_room)
+            if up is not None:
+                self.last_up = max(0.0, self._unit(up))
         if head_room is not None:
             x, z, yaw = head_room
             self.last_head_room = (self._unit(x), self._unit(z), yaw / 180.0)
@@ -113,6 +132,8 @@ class OscCat:
         self._send("CatVisible", visible)
         self._send("CatState", self.STATES.get(kind, 0) if visible else 0)
         self._send("CatNear", bool(visible and near))
+        if self.send_height:
+            self._send("CatUp", self.last_up)
         self._send("CatRoomX", self.last_cat_room[0])
         self._send("CatRoomZ", self.last_cat_room[1])
         self._send("HeadRoomX", self.last_head_room[0])
@@ -164,15 +185,16 @@ class OscStream:
                     anchored = stamp is not None
                     if anchored:
                         ref = stamp  # measured from the anchor pose, which the avatar froze in the world
-                off = cat_room = head_room = None
+                off = cat_room = head_room = up = None
                 if ref is not None and raw_to_cam is not None:
                     head_room = room_head(raw_to_cam @ ref)
                     if cat_cam is not None:
                         cam_to_raw = np.linalg.inv(raw_to_cam)
                         off = head_offset(cam_to_raw[:3, :3] @ cat_cam + cam_to_raw[:3, 3], ref)
                         cat_room = (float(cat_cam[0]), float(cat_cam[2]))
+                        up = self.osc.height(cat_cam[1])
                 self.osc.send(off, visible, kind, near, time.monotonic(), cat_room=cat_room, head_room=head_room,
-                              cat_yaw=yaw, anchored=anchored)
+                              cat_yaw=yaw, anchored=anchored, up=up)
             except Exception as e:  # noqa: BLE001  keep sending; one bad pose read shouldn't stop the avatar
                 if self.log is not None and not warned:
                     self.log.warning("OSC send failed (%s); still trying", e)

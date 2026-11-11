@@ -6,8 +6,8 @@
    second. The trained model stores its weights as fp16 to halve the file; the maths runs in fp32.
 2. **Locate.** A box only counts if the floor under it is inside the room (the box around the cameras), which throws
    out pictures on the walls, like a painting. Two or more cameras: its box centres are triangulated with the camera
-   code's `Rig`. One camera: the bottom of its box is projected onto the floor. Anything above 1 m (`max_height_m`) is
-   thrown out too. Then the camera code's jump gate and One Euro filter steady it.
+   code's `Rig`. One camera: the bottom of its box is projected onto the floor. `max_height_m` can also throw out anything
+   higher than a set height (off by default). Then the camera code's jump gate and One Euro filter steady it.
    Weak detections (down to 0.08) also count, but only where it's expected: overlapping its outline as projected
    from another camera's sighting, or from where it just was. That cuts flicker and gets more cameras triangulating.
    It must be seen 2 detections in a row before it's shown (`filter.confirm_frames`), and when it disappears its
