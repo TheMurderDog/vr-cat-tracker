@@ -59,6 +59,11 @@ Rectangle {
                 color: ww.info.level === "alert" ? Theme.alert : Theme.text
                 font.pixelSize: 92; font.weight: Font.Bold
             }
+            Text {  // with foot trackers: which one the distance is from (the nearest of your feet and head)
+                visible: ww.show.distance && ww.info.from !== "" && ww.info.dist !== undefined && ww.info.dist !== null
+                text: ww.info.from; color: Theme.muted; font.pixelSize: 28
+                Layout.fillWidth: true; elide: Text.ElideRight
+            }
             RowLayout {
                 visible: ww.show.state
                 spacing: 12

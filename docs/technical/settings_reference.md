@@ -205,6 +205,7 @@ Paths are relative to the top folder unless absolute.
 | `alert` |  | when to warn: a small arrow at the edge of your view pointing toward it, and its red icon |
 | `alert.underfoot_m` | `1.0` | this close: set to warn even when the cat is still or asleep (was 0.5: too late, 2026-10-30) |
 | `alert.radius_m` | `1.8` | this close and it's moving: warn |
+| `alert.measure_from` | `feet` | feet: the warnings and the distance use the nearest of the headset and the foot trackers assigned in the app (my_data/tracker/feet.json); head: the headset only |
 | `alert.ttc_s` | `2.5` | it (or you) closing in fast enough to meet within this many seconds: warn early... |
 | `alert.max_warn_m` | `4.0` | ...from up to this far away |
 | `alert.min_closing_speed` | `0.2` | m/s; slower than this doesn't count as closing in |

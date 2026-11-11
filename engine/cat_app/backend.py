@@ -80,6 +80,9 @@ class Backend(QObject):
     messageChanged = Signal()
     settingsChanged = Signal()
     heatChanged = Signal()
+    vrVisibleChanged = Signal()
+    feetChanged = Signal()
+    crashNoticeChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -96,6 +99,7 @@ class Backend(QObject):
         self._frames_wanted = 0.0
         self._trail = []
         self._message = ""
+        self._crash_notice = False  # the PC went down while the app was open last time (see crash_check)
         self._previews = {}
         self._asset_cache = {}
         self._preview_rev = 0
@@ -125,6 +129,12 @@ class Backend(QObject):
         self._heat = {}
         self._heat_busy = False
         self._heat_at = 0.0
+        # foot trackers: assigned by waving (cat_app.feet_pick), used by the tracker for the distance
+        from cat_app.feet_pick import FeetPick
+        self.vr_source = lambda: None  # main.py points this at the SteamVR tab's connection
+        self.feet_pick = FeetPick(lambda: self.vr_source(), self)
+        self.feet_pick.changed.connect(self.feetChanged.emit)
+        self.feet_pick.changed.connect(self.statusChanged.emit)  # the assigned feet shown on the screens
 
     # ---- the link to the tracker (shared memory) ----
 
@@ -169,11 +179,12 @@ class Backend(QObject):
         return {"bridge": True, "running": True, "vr": True, "anchoring": False, "frame_seq": 0,
                 "anchor": {"have": True, "off": False},
                 "cat": {"state": "seen", "pos": [x, 0.15, z], "pos_raw": [x, 0.15, z], "kind": "move", "speed": 0.3, "dist": d,
-                        "level": "near" if d < 0.9 else None, "alpha": 1.0,
+                        "level": "near" if d < 0.9 else None, "alpha": 1.0, "from": "left foot",
                         "wobble_cm": max(0.0, 12 - 14 * math.hypot(x - 0.35, z - 0.75))},
                 "alert": {"now": {"underfoot_m": 1.0, "radius_m": 1.8, "max_warn_m": 4.0, "buzz_amplitude": 0.6, "buzz": True},
                           "config": {"underfoot_m": 1.0, "radius_m": 1.8, "max_warn_m": 4.0, "buzz_amplitude": 0.6, "buzz": True}},
                 "auto_capture": {"active": False, "count": 0},
+                "feet": {"assigned": ["left", "right"], "tracked": ["left", "right"]},
                 "head": {"pos": [hx, 1.6, hz], "fwd": [0.8, 0.2]},
                 "room": {"bounds": [-1.9, 1.9, -1.6, 2.1], "cameras": [[-1.75, -1.45], [1.75, -1.45], [1.75, 1.95], [-1.75, 1.95]]},
                 "cameras": {"names": ["front_left", "front_right", "back_right", "back_left"], "stale": [2] if int(t / 8) % 3 == 2 else []},
@@ -196,6 +207,56 @@ class Backend(QObject):
         if bool(shown) != self.vr_visible:
             self.vr_visible = bool(shown)
             self._retime()
+            self.vrVisibleChanged.emit()
+
+    @Property(bool, notify=vrVisibleChanged)
+    def vrTabOpen(self):
+        """True while the SteamVR dashboard shows the cat tab (its Cameras page asks for pictures only then)."""
+        return self.vr_visible
+
+    # ---- foot trackers ----
+
+    @Property("QVariantMap", notify=feetChanged)
+    def feetPick(self):
+        """The wave-to-assign steps: state (idle, settle, left, right, done, failed) and what to tell you."""
+        return {"state": self.feet_pick.state, "text": self.feet_pick.text,
+                "busy": self.feet_pick.state in ("settle", "left", "right")}
+
+    @Property("QVariantMap", notify=statusChanged)
+    def feet(self):
+        """Which foot trackers are assigned and tracking, and what the distance is measured from right now."""
+        f = self._status.get("feet") or {}
+        assigned = f.get("assigned") if self._connected else self.feet_pick.assigned()
+        tracked = f.get("tracked") or [] if self._connected else []
+        frm = ((self._status.get("cat") or {}).get("from") or "") if self._connected else ""
+        if not assigned:
+            text = "No foot trackers assigned: the distance is from your headset."
+        else:
+            names = " and ".join(assigned)
+            if not self._connected:
+                text = f"Assigned: {names} foot. Used while the tracker runs."
+            elif not tracked:
+                text = f"Assigned: {names} foot, but not tracking (switched off?). Using your headset for now."
+            else:
+                text = f"Assigned: {names} foot ({' and '.join(tracked)} tracking)."
+        return {"assigned": assigned or [], "tracked": tracked, "from": frm, "text": text}
+
+    @Slot()
+    def startFeetPick(self):
+        self.feet_pick.start()
+
+    @Slot()
+    def cancelFeetPick(self):
+        self.feet_pick.cancel()
+
+    @Slot()
+    def feetOnlyOne(self):
+        self.feet_pick.only_one()
+
+    @Slot()
+    def forgetFeet(self):
+        self.feet_pick.forget()
+        self.statusChanged.emit()
 
     def _retime(self):
         if self.timer.interval() != self._interval():
@@ -578,6 +639,26 @@ class Backend(QObject):
         p.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(p)))
 
+    # ---- after the PC went down with the app open: suggest picture mode ----
+
+    @Property(bool, notify=crashNoticeChanged)
+    def crashNotice(self):
+        return self._crash_notice
+
+    def set_crash_notice(self, on):
+        if bool(on) != self._crash_notice:
+            self._crash_notice = bool(on)
+            self.crashNoticeChanged.emit()
+
+    @Slot()
+    def usePictureMode(self):
+        self.setSetting("vr_mode", "file")
+        self.set_crash_notice(False)
+
+    @Slot()
+    def dismissCrashNotice(self):
+        self.set_crash_notice(False)
+
     @Slot()
     def clearMessage(self):
         self._say("")
@@ -687,13 +768,15 @@ class Backend(QObject):
         import math
         s = self._status
         cat, head = s.get("cat") or {}, s.get("head") or {}
-        out = {"dist": None, "angle": None, "level": self.level, "state": "", "problem": ""}
+        out = {"dist": None, "angle": None, "level": self.level, "state": "", "problem": "", "from": ""}
         if not self._connected:
             out["state"] = "Tracker off"
             return out
         st = cat.get("state")
         if st in ("seen", "lost") and cat.get("pos"):
             out["dist"] = cat.get("dist")
+            if (s.get("feet") or {}).get("assigned") and cat.get("from"):  # only worth saying once feet are in use
+                out["from"] = "from " + ("your head" if cat["from"] == "head" else "your " + cat["from"])
             if head.get("pos") and head.get("fwd"):
                 fx, fz = head["fwd"]
                 dx, dz = cat["pos"][0] - head["pos"][0], cat["pos"][2] - head["pos"][2]

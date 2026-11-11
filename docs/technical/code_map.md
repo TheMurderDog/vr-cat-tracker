@@ -116,6 +116,7 @@ saved anchor is always used now.
 | `cat_app.wrist` | the wrist widget overlay and its SteamVR Input actions (`input/*.json`) |
 | `cat_app.d3d11_texture` | puts a picture on SteamVR's GPU as a D3D11 texture (Windows, ctypes) |
 | `cat_app.app_settings` | the app's own settings (`my_data/app/app_settings.json`): alert tuning, snooze length, wrist widget |
+| `cat_app.crash_check` | notices the PC went down while the app was open (`my_data/app/running.json` plus boot time), so the app suggests picture mode (`vr_mode: file`) |
 | `cat_app.marker_style` | the marker look (colour, shade, size, opacity) and the recoloured icons |
 | `cat_app.extras` | heatmap, rising buzz steps, snooze and capture helpers (pure logic) |
 | `cat_app.perf` | CPU and frame-time numbers for `my_data/logs/cat_app/perf.log` |

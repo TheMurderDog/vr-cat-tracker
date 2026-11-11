@@ -10,6 +10,8 @@ Rectangle {
     color: Theme.bg
     property int page: 0
     property string group: "cat"
+    property string settingsPage: "start"
+    property bool newAnchor: false   // Settings: walk for a new anchor at the next Start
     readonly property real k: 1.35   // everything bigger than on the desktop
 
     ColumnLayout {
@@ -20,11 +22,14 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 14
             Image { source: catIcon; Layout.preferredWidth: 58; Layout.preferredHeight: 58; smooth: true }
-            Text { text: "Cat Tracker"; color: Theme.text; font.pixelSize: 34; font.weight: Font.Bold }
+            Text { text: "Cat Tracker"; color: Theme.text; font.pixelSize: 30; font.weight: Font.Bold }
             Item { Layout.fillWidth: true }
-            BigButton { text: "Status"; size: 1.2; implicitWidth: 200; primary: vr.page === 0; onClicked: vr.page = 0 }
-            BigButton { text: "Marker look"; size: 1.2; implicitWidth: 240; primary: vr.page === 1; onClicked: vr.page = 1 }
-            BigButton { text: "Alerts"; size: 1.2; implicitWidth: 200; primary: vr.page === 2; onClicked: vr.page = 2 }
+            Repeater {
+                model: ["Status", "Cameras", "Marker look", "Alerts", "Settings"]
+                BigButton { text: modelData; size: 1.1; implicitWidth: modelData === "Marker look" ? 200 : 170
+                            primary: vr.page === index; onClicked: vr.page = index
+                            Accessible.role: Accessible.PageTab }
+            }
         }
 
         StackLayout {
@@ -38,33 +43,81 @@ Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
                     spacing: 14
                     StatusBanner { Layout.fillWidth: true; size: 1.15 }
+                    CrashNotice { Layout.fillWidth: true; size: 1.15 }
                     RoomMap { Layout.fillWidth: true; Layout.fillHeight: true; size: 1.2 }
+                    Rectangle {  // the app's last message (starting, stopping, a problem); point and click to hide it
+                        visible: backend.message !== ""
+                        Layout.fillWidth: true; radius: 12; color: Theme.panel2
+                        implicitHeight: vrMsg.implicitHeight + 24
+                        Text { id: vrMsg; anchors.fill: parent; anchors.margins: 12; text: backend.message
+                               color: Theme.text; font.pixelSize: 19; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
+                        MouseArea { anchors.fill: parent; onClicked: backend.clearMessage() }
+                    }
                 }
                 GridLayout {
                     Layout.preferredWidth: 470; Layout.maximumWidth: 470; Layout.fillHeight: true
-                    columns: 2; rowSpacing: 14; columnSpacing: 14
+                    columns: 6; rowSpacing: 14; columnSpacing: 14
                     BigButton {
-                        Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k; primary: true
+                        Layout.columnSpan: 6; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k; primary: true
                         text: backend.connected ? "Stop tracker" : (backend.otherTracker ? "Stop background tracker" : "Start tracker")
-                        hint: (backend.connected || backend.otherTracker) ? "" : (backend.startOsc ? "Sends to VRChat" : "VRChat off (change it on the desktop)")
+                        hint: (backend.connected || backend.otherTracker) ? ""
+                              : (vr.newAnchor ? "New anchor walk, " : "") + (backend.startOsc ? "sends to VRChat" : "VRChat off") + " (Settings)"
                         enabled: !backend.starting
-                        onClicked: (backend.connected || backend.otherTracker) ? backend.stop() : backend.startFromVr()
+                        onClicked: {
+                            if (backend.connected || backend.otherTracker) {
+                                backend.stop()
+                            } else {
+                                backend.start(vr.newAnchor, backend.startOsc)
+                                vr.newAnchor = false
+                            }
+                        }
                     }
-                    BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
+                    BigButton { Layout.columnSpan: 6; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
                                 text: "Re-anchor"; primary: backend.anchorNeeded
                                 hint: backend.anchorNeeded ? "Needed now: walk slowly around the room" : "Only when the app asks you to"
                                 enabled: backend.connected && !!backend.status.vr; onClicked: backend.reanchor() }
-                    BigButton { Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k; text: "Test buzz"
+                    BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: 1.15; text: "Test buzz"
                                 enabled: backend.connected && !!backend.status.vr; onClicked: backend.testBuzz() }
-                    BigButton { Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
+                    BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: 1.15
                                 text: backend.status.capture && backend.status.capture.on ? "Stop capture" : "Capture"
                                 hint: backend.status.capture && backend.status.capture.on ? backend.status.capture.n + " saved" : "For training"
                                 enabled: backend.connected; onClicked: backend.toggleCapture() }
-                    BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
+                    BigButton { Layout.columnSpan: 2; Layout.fillWidth: true; Layout.fillHeight: true; size: 1.15; text: "Snapshot"
+                                hint: "Pictures"; enabled: backend.connected; onClicked: backend.snapshot() }
+                    BigButton { Layout.columnSpan: 6; Layout.fillWidth: true; Layout.fillHeight: true; size: vr.k
                                 text: backend.snoozeButtonText
-                                hint: backend.snoozed ? backend.snoozeText : "How long: Alerts tab"
+                                hint: backend.snoozed ? backend.snoozeText : "Length: Alerts tab"
                                 onClicked: backend.toggleSnooze() }
-                    CameraChips { Layout.columnSpan: 2; Layout.fillWidth: true; size: 1.2 }
+                    CameraChips { Layout.columnSpan: 6; Layout.fillWidth: true; size: 1.2 }
+                }
+            }
+
+            // ---- Cameras ----
+            ColumnLayout {
+                spacing: 12
+                Timer { interval: 500; repeat: true; triggeredOnStart: true
+                        running: vr.page === 1 && backend.vrTabOpen; onTriggered: backend.wantFrames() }
+                Rectangle {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    radius: 16; color: "#0d0f12"
+                    Image {
+                        anchors.fill: parent; anchors.margins: 8
+                        visible: vr.page === 1 && backend.hasFrame && backend.connected
+                        source: visible ? "image://cat/frame/" + backend.frameSeq : ""
+                        fillMode: Image.PreserveAspectFit; cache: false; asynchronous: false
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !(backend.hasFrame && backend.connected)
+                        text: backend.connected ? "Waiting for the first pictures..." : "Start the tracker on the Status tab to see the cameras."
+                        color: Theme.muted; font.pixelSize: 24
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true; spacing: 14
+                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 18
+                           text: "Grey boxes are everything the model found; the thick box is the one used for the cat." }
+                    CameraChips { Layout.preferredWidth: 640; size: 1.15 }
                 }
             }
 
@@ -120,17 +173,68 @@ Rectangle {
                         Layout.fillWidth: true; Layout.fillHeight: true; radius: 16; color: Theme.panel
                         ColumnLayout {
                             anchors.fill: parent; anchors.margins: 18; spacing: 10
-                            Text { text: "Wrist widget"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
-                            Segmented { Layout.fillWidth: true; size: 1.05; options: [[true, "On"], [false, "Off"]]
-                                        current: backend.settings.wrist.on; onPicked: function(v) { backend.setSetting("wrist.on", v) } }
-                            Segmented { Layout.fillWidth: true; size: 1.05; enabled: backend.settings.wrist.on
-                                        options: [["left", "Left"], ["right", "Right"], ["head", "View"], ["room", "Room"]]
-                                        current: backend.settings.wrist.attach; onPicked: function(v) { backend.setSetting("wrist.attach", v) } }
-                            Segmented { Layout.fillWidth: true; size: 1.05; enabled: backend.settings.wrist.on
-                                        options: [[false, "Can move"], [true, "Locked"]]
-                                        current: backend.settings.wrist.locked; onPicked: function(v) { backend.setSetting("wrist.locked", v) } }
-                            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 16
-                                   text: "Grab it with your other hand's grip to move it; thumbstick up or down while holding to resize. What it shows is set on the desktop." }
+                            Text { text: "Distance from"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
+                            FeetPanel { Layout.fillWidth: true; size: 1.05 }
+                            Item { Layout.fillHeight: true }
+                        }
+                    }
+                }
+            }
+
+            // ---- Settings ----
+            ColumnLayout {
+                spacing: 14
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 14
+                    Repeater {
+                        model: [["start", "Starting"], ["wrist", "Wrist widget"], ["map", "Room map"], ["pictures", "Pictures"], ["help", "Help"]]
+                        BigButton { Layout.fillWidth: true; size: 1.1; text: modelData[1]
+                                    primary: vr.settingsPage === modelData[0]; onClicked: vr.settingsPage = modelData[0] }
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true; Layout.fillHeight: true; radius: 16; color: Theme.panel
+                    StackLayout {
+                        anchors.fill: parent; anchors.margins: 20
+                        currentIndex: ["start", "wrist", "map", "pictures", "help"].indexOf(vr.settingsPage)
+                        ColumnLayout {
+                            spacing: 14
+                            Text { text: "When you press Start"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
+                            Segmented { Layout.fillWidth: true; size: 1.1; label: "Send to VRChat (OSC)"
+                                        options: [[true, "On"], [false, "Off"]]; current: backend.startOsc
+                                        onPicked: function(v) { backend.setSetting("start_osc", v) } }
+                            Segmented { Layout.fillWidth: true; size: 1.1; label: "Walk for a new anchor"
+                                        options: [[false, "No, use the saved one"], [true, "Yes, next start"]]; current: vr.newAnchor
+                                        onPicked: function(v) { vr.newAnchor = v } }
+                            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 18
+                                   text: "VRChat is remembered for next time, here and on the desktop. A new anchor walk is only needed when the app asks "
+                                         + "for it (the Re-anchor button does the same while the tracker runs); it applies to the next Start only. "
+                                         + "Clear the floor first." }
+                            Item { Layout.fillHeight: true }
+                        }
+                        WidgetPanel { size: 1.0; compact: true }
+                        MapPanel { size: 1.15 }
+                        ColumnLayout {
+                            spacing: 14
+                            Text { text: "SteamVR pictures"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
+                            PicturePanel { Layout.fillWidth: true; size: 1.2 }
+                            Item { Layout.fillHeight: true }
+                        }
+                        ColumnLayout {
+                            spacing: 14
+                            Text { text: "Help"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
+                            Text {
+                                Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: 20
+                                text: "Point with a controller's laser and pull the trigger to press a button.\n\n"
+                                      + "Start runs the tracker with the saved anchor. The first time, it asks you to walk slowly around "
+                                      + "the room with the headset on: clear the floor first.\n\n"
+                                      + "A tracker started without the app (the desktop test, a capture) has the cameras: press "
+                                      + "\"Stop background tracker\" on the Status tab, then Start.\n\n"
+                                      + "Logs and folders are on the desktop window's Help page.\n\n"
+                                      + "It's a hobby project, not a safety device: the cat's marker shows where the cameras think it is, "
+                                      + "and it can miss the cat. See 0_start_here\\DISCLAIMER.md."
+                            }
                             Item { Layout.fillHeight: true }
                         }
                     }

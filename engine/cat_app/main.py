@@ -24,8 +24,8 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow, QSGRendererInterface
 from PySide6.QtQuickControls2 import QQuickStyle
 
-from cat_app import link
-from cat_app.backend import ASSETS, Backend, Images
+from cat_app import crash_check, link
+from cat_app.backend import APP_DATA, ASSETS, Backend, Images
 from core.config import resolve_path
 
 HERE = Path(__file__).resolve().parent
@@ -142,6 +142,13 @@ def main():
     backend = Backend()
     backend.demo = args.demo
     backend.optimize = not args.no_optimize
+    # the PC went down while the app was open last time: the app suggests picture mode (see crash_check)
+    running = APP_DATA / "running.json"
+    track_run = not (args.vr_picture or args.window_picture or args.demo)
+    if track_run and crash_check.start(running):
+        log("The PC started up again since the app was last open, and the app hadn't closed: "
+            "if it crashed, the app suggests picture mode")
+        backend.set_crash_notice(True)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("cat", Images(backend))
     engine.rootContext().setContextProperty("backend", backend)
@@ -197,6 +204,8 @@ def main():
                                optimize=not args.no_optimize, quit_with_steamvr=args.background)
         except Exception:  # noqa: BLE001 - the desktop window still works without it
             log("No SteamVR tab:\n" + traceback.format_exc())
+    if dash is not None:  # assigning the foot trackers uses the tab's SteamVR connection
+        backend.vr_source = lambda: (dash.openvr, dash.vr) if dash.vr is not None else None
     if args.background and dash is None:
         log("Started in the background, but there's no SteamVR tab to show: closing")
         return 1
@@ -237,6 +246,8 @@ def main():
             dash.close()
         if one is not None and one.block is not None:
             one.block.close()
+        if track_run:
+            crash_check.finish(running)
     app.aboutToQuit.connect(cleanup)
     return app.exec()
 

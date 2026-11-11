@@ -44,7 +44,9 @@ STATE = {
     "vr": False,
     "anchoring": False,
     "anchor": {"have": False, "off": False},
-    "cat": {"state": "hidden", "pos": None, "kind": "normal", "speed": 0.0, "dist": None, "level": None, "alpha": 0.0},
+    "cat": {"state": "hidden", "pos": None, "kind": "normal", "speed": 0.0, "dist": None, "level": None, "alpha": 0.0,
+            "from": None},          # what the distance is measured from: "head", "left foot", "right foot"
+    "feet": {"assigned": [], "tracked": []},  # foot trackers (cat_tracker.feet): sides assigned, sides tracking now
     "head": None,
     "room": None,
     "cameras": {"names": [], "stale": []},
@@ -261,7 +263,7 @@ def install_hooks():
     from tools import window
     window.quit_when_closed = lambda *a, **k: {"shown": False, "closed": False}  # (there's no window to close)
 
-    from cat_tracker import alert, anchor, collect, health, locate, settings, vrlink
+    from cat_tracker import alert, anchor, collect, feet, health, locate, settings, vrlink
 
     load = settings.load
 
@@ -453,6 +455,7 @@ def install_hooks():
         with LOCK:
             STATE["cat"]["dist"] = float(dist)
             STATE["cat"]["level"] = lvl
+            STATE["cat"]["from"] = getattr(self, "measured_from", None)
         escalate(lvl, now)
         return lvl
 
@@ -460,6 +463,14 @@ def install_hooks():
         _set(("cat", "level"), None)
         return p_reset(self)
     alert.Proximity.__init__, alert.Proximity.update, alert.Proximity.reset = prox_init, prox_update, prox_reset
+
+    f_positions = feet.Feet.positions
+
+    def feet_positions(self, vr, now=None):
+        out = f_positions(self, vr, now)
+        _set(("feet",), {"assigned": sorted(self.serials), "tracked": sorted(self.tracked)})
+        return out
+    feet.Feet.positions = feet_positions
 
     # -- health, capture, anchor --
     h_msg, h_cams = health.Health.message, health.Health.cameras
