@@ -62,11 +62,25 @@ You see the cat icon on your real cat in the headset.
 - **The icon sits a little off your cat:** measure from the front of your headset to the middle of your head, and
   set it in `settings\cameras.yaml` under `fusion` (right, up, back, in metres), then redo the anchor (`a`). For 8 cm
   back and 2 cm down: `headset_to_head_m: [0.0, -0.02, 0.08]`
-- **The PC crashes or freezes while the app's tab is open in VR:** to rule the app out, open
-  `my_data\app\app_settings.json` with the app closed, set `"vr_mode": "file"` and start it again. The tab and wrist
-  widget then reach SteamVR as picture files (they may flicker a little) and the app doesn't use the graphics card.
-  `"d3d11"` puts it back.
+- **The PC crashes or freezes while you play:** see [If your PC crashes](#if-your-pc-crashes) just below.
 - How it all works: [docs/how_it_works.md](../docs/how_it_works.md).
+
+### If your PC crashes
+
+Some graphics drivers crash or freeze the whole PC (a blue screen, or a black screen and a restart) when several
+programs use the graphics card at once during VR. These steps helped on one PC. Try them in order, one at a time, so
+you can tell which one does it for yours:
+
+1. **Picture mode.** In the app: Settings > Pictures in the VR tab, or Alerts & widget > SteamVR pictures on the
+   desktop. The app then sends its VR pictures to SteamVR as files and uses no graphics card itself. It switches
+   straight away. If the PC went down while the app was open, the app offers this on its next start.
+2. **Move other programs to the built-in graphics,** if your PC has them (many Intel and AMD processors do). Windows
+   Settings > System > Display > Graphics: add the program (your browser, chat apps), open its options and choose
+   Power saving. For an app from the Microsoft Store, pick "Microsoft Store app" in the list first. Leave SteamVR,
+   your VR game and the tracker as they are. To undo, set the program back to "Let Windows decide".
+3. **Reinstall the graphics driver cleanly.** Install your graphics card maker's current driver with its "clean
+   installation" option, or try the version before it. This changes your system: follow the driver maker's
+   instructions.
 
 ## Try this
 

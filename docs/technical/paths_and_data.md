@@ -64,6 +64,7 @@ Everything made on the PC. Not in git except `my_data/README.md`.
 | `logs/cameras/` | steps 1, 2 and 7 (`logging` in `cameras.yaml`) | you | yes |
 | `logs/cat_tracker/` (incl. `snapshots/`, `watchdog.log`, `autostart_error.txt`) | the tracker and its tools (`logging` in `cat_tracker.yaml`) | you | yes |
 | `app/app_settings.json`, `app/marker_style.json` | the app (`5_play_in_vr\app`), when you change an alert or the marker look there | the app and the tracker started through it (`cat_app.bridge`) | yes: back to the defaults |
+| `app/running.json` | the app, while it is open (deleted when it closes) | the app at its next start (`cat_app.crash_check`) | yes |
 | `app/heatmap.json` | the tracker started through the app, every few seconds | the app's room map | yes: the map starts empty |
 | `app/styled/*.png`, `app/snooze.png`, `app/vr_tab/`, `app/wrist.png`, `app/cat_tracker_app.vrmanifest` | the app and `cat_app.bridge` (recoloured icons, the VR tab's and wrist's pictures, a SteamVR Input manifest used when the app isn't registered with SteamVR) | the same | yes, when the app isn't running |
 | `logs/cat_app/` (`app.log`, `bridge.log`, `freeze.log`, `perf.log`, `autostart_error.txt`) | the app and `cat_app.bridge` | you | yes |

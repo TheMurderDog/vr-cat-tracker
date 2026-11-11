@@ -65,6 +65,7 @@ ApplicationWindow {
                             anchors.fill: parent; anchors.margins: 20
                             spacing: 16
                             StatusBanner { Layout.fillWidth: true }
+                            CrashNotice { Layout.fillWidth: true }
                             RowLayout {
                                 Layout.fillWidth: true; Layout.fillHeight: true
                                 spacing: 16
@@ -226,6 +227,8 @@ ApplicationWindow {
                                       WidgetPanel { Layout.fillWidth: true } }
                             Section { Layout.fillWidth: true; title: "Room map"
                                       MapPanel { Layout.fillWidth: true } }
+                            Section { Layout.fillWidth: true; title: "SteamVR pictures"
+                                      PicturePanel { Layout.fillWidth: true } }
                             Item { Layout.preferredHeight: 20 }
                         }
                     }

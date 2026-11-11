@@ -161,6 +161,7 @@ class VrDashboard(QObject):
         #   d3d11  (default) a Direct3D 11 texture, like other overlay apps; falls back to "file" if it fails
         #   file   a picture file SteamVR loads, at most 4 times a second and only when it changed (see PictureFile)
         self.mode = mode
+        self.mode_setting = backend.settings.get("vr_mode") if backend is not None else None
         self.d3d = None
         self.picture = PictureFile("vr_tab")
         self.flip_y = True  # SteamVR's overlay mouse y counts up from the bottom
@@ -220,8 +221,14 @@ class VrDashboard(QObject):
             self.disconnect()
 
     def _settings_changed(self):
-        """The wrist widget comes and goes with its On/Off setting."""
-        if self.vr is None or self.backend is None:
+        """The wrist widget comes and goes with its On/Off setting, and picture mode switches straight away."""
+        if self.backend is None:
+            return
+        want = self.backend.settings.get("vr_mode")
+        if want != self.mode_setting:  # only when the setting itself changes (not after falling back to "file")
+            self.mode_setting = want
+            self.set_mode(want)
+        if self.vr is None:
             return
         on = bool(self.backend.settings["wrist"]["on"])
         if on and self.wrist is None:
@@ -238,6 +245,21 @@ class VrDashboard(QObject):
         elif self.wrist is not None:
             self.wrist.apply()
         self._set_visible(self.was_visible)
+
+    def set_mode(self, mode):
+        """Switch how the pictures reach SteamVR while running: "d3d11" or "file" (see __init__)."""
+        if mode not in ("d3d11", "file") or mode == self.mode:
+            return
+        self.log(f"SteamVR pictures: {mode}" + (" (no graphics card use by the app)" if mode == "file" else ""))
+        self.mode = mode
+        if mode == "file":
+            self._close_d3d()
+        self.picture.forget()  # the next picture goes to SteamVR even if it looks the same
+        self.last_frame = 0.0
+        if self.panel is not None:
+            self.panel.dirty = True
+        if self.wrist is not None:
+            self.wrist.set_mode(mode)
 
     def disconnect(self):
         self.pump.stop()

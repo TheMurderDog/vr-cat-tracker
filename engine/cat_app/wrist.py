@@ -369,6 +369,13 @@ class WristWidget:
                 self._close_d3d()
         self.picture.send(self.ov, self.handle, img)
 
+    def set_mode(self, mode):
+        self.mode = mode
+        if mode == "file":
+            self._close_d3d()
+        self.picture.forget()
+        self.panel.dirty = True
+
     def _close_d3d(self):
         if self.d3d is not None:
             try:

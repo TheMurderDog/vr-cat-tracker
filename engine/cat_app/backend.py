@@ -82,6 +82,7 @@ class Backend(QObject):
     heatChanged = Signal()
     vrVisibleChanged = Signal()
     feetChanged = Signal()
+    crashNoticeChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -98,6 +99,7 @@ class Backend(QObject):
         self._frames_wanted = 0.0
         self._trail = []
         self._message = ""
+        self._crash_notice = False  # the PC went down while the app was open last time (see crash_check)
         self._previews = {}
         self._asset_cache = {}
         self._preview_rev = 0
@@ -636,6 +638,26 @@ class Backend(QObject):
              "settings": TOP / "settings", "app_data": APP_DATA}.get(which, TOP)
         p.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(p)))
+
+    # ---- after the PC went down with the app open: suggest picture mode ----
+
+    @Property(bool, notify=crashNoticeChanged)
+    def crashNotice(self):
+        return self._crash_notice
+
+    def set_crash_notice(self, on):
+        if bool(on) != self._crash_notice:
+            self._crash_notice = bool(on)
+            self.crashNoticeChanged.emit()
+
+    @Slot()
+    def usePictureMode(self):
+        self.setSetting("vr_mode", "file")
+        self.set_crash_notice(False)
+
+    @Slot()
+    def dismissCrashNotice(self):
+        self.set_crash_notice(False)
 
     @Slot()
     def clearMessage(self):

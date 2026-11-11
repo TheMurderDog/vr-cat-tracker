@@ -43,6 +43,7 @@ Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
                     spacing: 14
                     StatusBanner { Layout.fillWidth: true; size: 1.15 }
+                    CrashNotice { Layout.fillWidth: true; size: 1.15 }
                     RoomMap { Layout.fillWidth: true; Layout.fillHeight: true; size: 1.2 }
                     Rectangle {  // the app's last message (starting, stopping, a problem); point and click to hide it
                         visible: backend.message !== ""
@@ -187,7 +188,7 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: 14
                     Repeater {
-                        model: [["start", "Starting"], ["wrist", "Wrist widget"], ["map", "Room map"], ["help", "Help"]]
+                        model: [["start", "Starting"], ["wrist", "Wrist widget"], ["map", "Room map"], ["pictures", "Pictures"], ["help", "Help"]]
                         BigButton { Layout.fillWidth: true; size: 1.1; text: modelData[1]
                                     primary: vr.settingsPage === modelData[0]; onClicked: vr.settingsPage = modelData[0] }
                     }
@@ -196,7 +197,7 @@ Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true; radius: 16; color: Theme.panel
                     StackLayout {
                         anchors.fill: parent; anchors.margins: 20
-                        currentIndex: ["start", "wrist", "map", "help"].indexOf(vr.settingsPage)
+                        currentIndex: ["start", "wrist", "map", "pictures", "help"].indexOf(vr.settingsPage)
                         ColumnLayout {
                             spacing: 14
                             Text { text: "When you press Start"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
@@ -214,6 +215,12 @@ Rectangle {
                         }
                         WidgetPanel { size: 1.0; compact: true }
                         MapPanel { size: 1.15 }
+                        ColumnLayout {
+                            spacing: 14
+                            Text { text: "SteamVR pictures"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
+                            PicturePanel { Layout.fillWidth: true; size: 1.2 }
+                            Item { Layout.fillHeight: true }
+                        }
                         ColumnLayout {
                             spacing: 14
                             Text { text: "Help"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold }
