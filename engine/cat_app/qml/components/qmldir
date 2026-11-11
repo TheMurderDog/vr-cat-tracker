@@ -11,3 +11,4 @@ AlertsPanel 1.0 AlertsPanel.qml
 MapPanel 1.0 MapPanel.qml
 WidgetPanel 1.0 WidgetPanel.qml
 SnoozePanel 1.0 SnoozePanel.qml
+FeetPanel 1.0 FeetPanel.qml

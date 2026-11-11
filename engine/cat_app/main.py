@@ -197,6 +197,8 @@ def main():
                                optimize=not args.no_optimize, quit_with_steamvr=args.background)
         except Exception:  # noqa: BLE001 - the desktop window still works without it
             log("No SteamVR tab:\n" + traceback.format_exc())
+    if dash is not None:  # assigning the foot trackers uses the tab's SteamVR connection
+        backend.vr_source = lambda: (dash.openvr, dash.vr) if dash.vr is not None else None
     if args.background and dash is None:
         log("Started in the background, but there's no SteamVR tab to show: closing")
         return 1

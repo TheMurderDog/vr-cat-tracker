@@ -145,6 +145,31 @@ class VRLink:
             return None
         return _m44(p.mDeviceToAbsoluteTracking)
 
+    def find_serials(self, serials):
+        """{name: SteamVR device number} for the connected devices with these serial numbers ({name: serial})."""
+        want = {s: name for name, s in serials.items() if s}
+        out = {}
+        for i in range(openvr.k_unMaxTrackedDeviceCount):
+            if not self.sys.isTrackedDeviceConnected(i):
+                continue
+            try:
+                s = self.sys.getStringTrackedDeviceProperty(i, openvr.Prop_SerialNumber_String)
+            except Exception:  # noqa: BLE001
+                continue
+            if s in want:
+                out[want[s]] = i
+        return out
+
+    def device_positions(self, indices, universe=RAW):
+        """{device number: xyz} for the ones tracking right now (others are left out)."""
+        poses = self.sys.getDeviceToAbsoluteTrackingPose(universe, 0, openvr.k_unMaxTrackedDeviceCount)
+        out = {}
+        for i in indices:
+            p = poses[i]
+            if p.bPoseIsValid and p.eTrackingResult == openvr.TrackingResult_Running_OK:
+                out[i] = np.ctypeslib.as_array(p.mDeviceToAbsoluteTracking.m)[:3, 3].copy()
+        return out
+
     def worn(self):
         """True while the headset's proximity sensor says it's on someone's head."""
         try:

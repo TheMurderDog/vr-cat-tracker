@@ -216,6 +216,8 @@ ApplicationWindow {
                             Section { Layout.fillWidth: true; title: "Warnings and buzz"
                                       note: backend.alertValues.known ? "" : "Start the tracker to see the values from your settings\\cat_tracker.yaml (these are its usual ones)."
                                       AlertsPanel { Layout.fillWidth: true } }
+                            Section { Layout.fillWidth: true; title: "Distance from your feet"
+                                      FeetPanel { Layout.fillWidth: true } }
                             Section { Layout.fillWidth: true; title: "Snooze length"
                                       note: "The Snooze button on the Home page mutes the buzz for this long, for when the cat has settled nearby and you know it. The arrow and the red icon still show, and a small dim sign in the corner of your view reminds you it's snoozed."
                                       SnoozePanel { Layout.fillWidth: true } }

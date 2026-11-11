@@ -36,6 +36,10 @@ Once it's installed, the app opens by itself however the tracker starts: `run_tr
 `6_optional_vrchat\3_run_with_vrchat.bat`, the restart scripts and the SteamVR autostart. The warnings are an extra
 hint, not a promise: keep the floor clear and look before you step.
 
+**Foot trackers (optional):** with SteamVR trackers on your feet, the distance and the warnings use whichever is
+closest to the cat, either foot or your headset. To assign them, sit down, press **Assign foot trackers** (VR tab:
+Alerts; desktop: Alerts & widget) and wave each foot when asked.
+
 ## You're done when
 
 You see the cat icon on your real cat in the headset.

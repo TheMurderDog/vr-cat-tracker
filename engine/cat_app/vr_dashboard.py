@@ -79,6 +79,9 @@ class OffscreenQml(QObject):
             backend.styleChanged.connect(self._mark)
             backend.settingsChanged.connect(self._mark)
             backend.heatChanged.connect(self._mark)
+            backend.frameChanged.connect(self._mark)    # the Cameras page
+            backend.messageChanged.connect(self._mark)
+            backend.feetChanged.connect(self._mark)
         self.buttons = Qt.MouseButton.NoButton
         self.last = QPointF(0, 0)
 

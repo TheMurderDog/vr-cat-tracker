@@ -95,6 +95,8 @@ overlay:
 alert:                      # when to warn: a small arrow at the edge of your view pointing toward it, and its red icon
   underfoot_m: 1.0          # this close: warn even if it's asleep (was 0.5: too late, 2026-10-30)
   radius_m: 1.8             # this close and it's moving: warn
+  measure_from: feet        # feet: from the nearest of the headset and your foot trackers (assign them in the app);
+                            # head: from the headset only. Without foot trackers both are the same
   ttc_s: 2.5                # it (or you) closing in fast enough to meet within this many seconds: warn early...
   max_warn_m: 4.0           # ...from up to this far away
   min_closing_speed: 0.2    # m/s; slower than this doesn't count as closing in

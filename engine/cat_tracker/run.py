@@ -31,6 +31,7 @@ from cat_tracker import anchor as anc
 from cat_tracker.alert import Heading, Motion, Proximity, Smoother
 from cat_tracker import settings
 from cat_tracker.detector import CatDetector, draw
+from cat_tracker.feet import Feet, closest
 from cat_tracker.collect import ENOUGH_SAID, NOCAT_ASK, FrameSaver
 from cat_tracker.hardframes import HardSaver
 from cat_tracker.health import Health, Heartbeat
@@ -39,7 +40,7 @@ from cat_tracker.notice import render as render_notice
 from cat_tracker.locate import CatTrack, locate, room_bounds, weak_matches
 from cat_tracker.osc import OscCat, OscStream
 from cat_tracker.stick_anchor import StickAnchor
-from cat_tracker.vrlink import billboard, edge_pose, flat, horizontal_distance
+from cat_tracker.vrlink import billboard, edge_pose, flat
 from core.config import get, resolve_path
 from core.runlog import start_run
 from fusion.triangulate import Rig
@@ -308,6 +309,8 @@ def main():
     said_enough = [False]
     track = CatTrack(fc, float(oc.get("lost_alpha", 0.6)))
     motion, prox, heading = Motion(oc), Proximity(al), Heading(oc)
+    # the distance is from the nearest of your headset and (if assigned in the app) your foot trackers, see feet.py
+    feet = Feet() if str(al.get("measure_from", "feet")) == "feet" else None
     smooth = Smoother(float(oc.get("smooth_s", 0.15)))
     buzz_armed, calm_since = True, None  # one buzz pattern each time the warning comes on, see alert.buzz_rearm_s
     hc = cc.get("hard_frames", {}) or {}
@@ -486,7 +489,10 @@ def main():
                     foot = np.array([shown[0], floor_y + 0.01, shown[2]])
                     ring = to_standing[:3, :3] @ foot + to_standing[:3, 3]
                     hmd_st = (M @ hmd)[:3, 3] if hmd is not None else p + np.array([0, 0, 1.0])
-                    dist = horizontal_distance(p, hmd_st) if hmd is not None else None
+                    body = {"head": hmd_st} if hmd is not None else {}
+                    if feet is not None:
+                        body.update({k: M[:3, :3] @ q + M[:3, 3] for k, q in feet.positions(vr).items()})
+                    dist, prox.measured_from = closest(p, body)
                     if dist is not None and state in ("seen", "lost"):
                         level = prox.update(dist, motion.speed if state == "seen" else 0.0, time.monotonic())
                     else:
