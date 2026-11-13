@@ -8,13 +8,15 @@ This shows a stand-in cat on your VRChat avatar at the spot where the cat tracke
 - locks in place in the world while you stand still, so it doesn't swim when you look around, and follows again when you move,
 - optionally (experimental) holds still in the world while your thumbsticks rest, even while you walk around your room for real ([Play-space anchor](#play-space-anchor-experimental)),
 - faces the way the cat is heading once the tracker knows it, and faces you until then,
-- switches between four poses: **Standing**, **Sleeping**, **Walking** and **Alert** (alert shows while the tracker is warning you that the cat is close).
+- switches between four poses: **Standing**, **Sleeping**, **Walking** and **Alert** (alert shows while the tracker is warning you that the cat is close),
+- tries to stand on top of the world's floor and furniture when the cat lands slightly inside them, and shows a small glowing hover pad under the cat when its real height is above the world's floor ([Floor and hover pad](#floor-and-hover-pad)),
+- can be hidden from the Action menu (**Cat Tracker > Cat**).
 
 The package ships with a simple placeholder cat (a low-poly stick figure). Swap in your own model as described below.
 
 ## Requirements
 
-- Unity 2022.3 (the version VRChat currently uses) with the **VRChat Avatars SDK 3.10.x** (tested with 3.10.5; the play-space anchor with 3.10.6)
+- Unity 2022.3 (the version VRChat currently uses) with the **VRChat Avatars SDK 3.10.x** (tested with 3.10.5; the play-space anchor, floor check and hover pad with 3.10.6, which has the VRC Raycast component they use)
 - **VRCFury** (tested with 1.1433.0; the play-space anchor with 1.1442.0), installed through the VRChat Creator Companion
 - The cat tracker from this repository running on the same PC, with OSC enabled in VRChat (Action menu > Options > OSC > Enabled)
 
@@ -27,6 +29,7 @@ The package ships with a simple placeholder cat (a low-poly stick figure). Swap 
 | `Cat Tracker.prefab` | The drop-in prefab |
 | `System/` | Tracker logic: FX controller, expression parameters, animation clips |
 | `Model/` | Placeholder cat: FBX, two plain materials (VRChat Mobile Toon Lit), pose clips, the pose controller |
+| `Hover Pad/` | The hover pad: disc mesh, its shader (`CatTracker/Hover Pad`) and material, and its two clips (`Hover Pad On`, `Hover Pad Off`) |
 | `Editor/CatTrackerViewPoint.cs` | Small build-time script (see below) |
 
 `6_optional_vrchat/1_import_into_unity/blender/` has the placeholder's `.blend` file, its FBX, and `build_cat_placeholder.py`, the script that generates it.
@@ -37,8 +40,8 @@ The package ships with a simple placeholder cat (a low-poly stick figure). Swap 
 
 1. Import `CatTracker.unitypackage` into your avatar project (VRChat SDK and VRCFury already installed).
 2. Drag `Cat Tracker.prefab` onto your avatar's root object in the Hierarchy (directly under the object with the Avatar Descriptor). Leave its position, rotation and scale at zero, zero and one.
-3. That's it. VRCFury adds the FX layers and parameters when you enter Play mode or upload. You don't need to edit your FX controller, menu or parameter list.
-4. Check the avatar's synced parameter budget: the prefab adds **52 bits**.
+3. That's it. VRCFury adds the FX layers, parameters and a **Cat Tracker** submenu (with the **Cat** toggle) when you enter Play mode or upload. You don't need to edit your FX controller, menu or parameter list.
+4. Check the avatar's synced parameter budget: the prefab adds **53 bits**.
 5. If you're updating from an older version of the package, use Reset Config in VRChat's OSC menu after uploading, so VRChat picks up the new parameters.
 
 How it fits on your avatar: VRCFury's **Armature Link** snaps `CatHeadLink` onto your avatar's Head bone (position only), and `CatHeadRef` inside it sits at your view position. Everything else stays under the prefab.
@@ -60,7 +63,9 @@ These match the names, types and units sent by the tracker's `osc.py`. All of th
 | `CatHeadingKnown` | Bool | yes | The cat has moved enough to know its heading |
 | `CatAnchorMode` | Bool | yes | Play-space anchor on: `CatAhead` and `CatRight` are measured from the anchor, not the headset (experimental, off unless turned on in the tracker settings) |
 
-The prefab also uses two local parameters that it drives itself, `CatInRange` and `CatAnchored`, plus VRChat's built-in `VelocityMagnitude` and `AngularY`. The tracker also sends `CatRoomX`, `CatRoomZ`, `HeadRoomX` and `HeadRoomZ`. The prefab doesn't use them, and VRChat ignores parameters an avatar doesn't have.
+`CatShow` (Bool, synced, saved, default on) is the **Cat** toggle in the menu. The tracker doesn't send it. When it's off, the cat stays hidden whatever the tracker sends.
+
+The prefab also uses local parameters that it drives itself: `CatInRange` and `CatAnchored`, and the raycast outputs `CatFloor_Hit`, `CatFloor_Ratio`, `CatGround_Hit` and `CatGround_Distance`. It also reads VRChat's built-in `VelocityMagnitude` and `AngularY`. The tracker also sends `CatRoomX`, `CatRoomZ`, `HeadRoomX` and `HeadRoomZ`. The prefab doesn't use them, and VRChat ignores parameters an avatar doesn't have.
 
 ## Play-space anchor (experimental)
 
@@ -79,6 +84,22 @@ Limits:
 - VRChat teleports, seats, moving platforms and other movement that doesn't come from your sticks or buttons can't be seen by the tracker, so the cat can sit in the wrong spot until your next stick push or button press.
 - Someone who joins the instance while you're anchored sees the cat measured from your head until your next stick push or button press.
 - It was tested by the author on one avatar with an Index headset and controllers. Other controllers use the bindings in `engine/cat_tracker/input/` and haven't been tried.
+
+## Floor and hover pad
+
+The cameras and the VRChat world don't share a floor, so the stand-in cat can end up inside a world's floor or furniture, or floating above it. Two VRC Raycasts (`HitWorlds` only, so they ignore players) try to help:
+
+- **Floor check.** `CatRoot/CatOffset/CatFloorRay` looks 0.5 m down from 0.5 m above the cat's tracked spot. If it hits the world, the cat is lifted onto that surface (FX layer **Cat Floor**, 0.15 s blend). So a world surface up to 0.5 m above the tracked spot lifts the cat onto it, and one that's higher is ignored.
+- **Hover pad.** `CatSmoothed/CatFloorHit/CatGroundRay` measures from the cat down to the world, up to 3 m. When the gap is more than 10 cm, or there's no world surface within 3 m, the FX layer **Cat Hover** fades in the pad under the cat (0.3 s, with a 1 cm bob). It fades out below 6 cm, or when the cat hides.
+
+Both are local: each player's VRChat client runs the raycasts against its own copy of the world, so no synced bits are used.
+
+**Swap the pad for your own.** The pad's parts are kept apart from the tracker logic so you can replace them:
+
+- *Different look, same behaviour:* delete `CatSmoothed/CatMesh/Hover Pad/Pad Visual` and put your own object inside `Hover Pad`, with its centre at the cat's feet. The **Cat Hover** layer scales `Hover Pad` from almost zero to full size and back, so anything inside it fades in with it. The `material._Fade` curve in the two clips then has nothing to animate, which Unity ignores. Or keep the disc and only change the material's colours, strength and pulse speed.
+- *Different behaviour:* the clips are `Hover Pad/Hover Pad On.anim` (looping) and `Hover Pad Off.anim`, used by the **Cat Hover** layer in `System/Cat Tracker FX.controller`. Edit them, or point the layer's two states at your own clips. The layer's conditions use `CatVisible`, `CatGround_Hit` and `CatGround_Distance` (metres), which you can also use in your own layers.
+- *No pad:* delete the `Hover Pad` object. The **Cat Hover** layer then animates nothing.
+- *No floor check either:* also delete `CatFloorRay`, `CatFloorHit` and `CatGroundHit`, and remove the **Cat Floor** and **Cat Hover** layers from the FX controller.
 
 ## Distance scale (calibration)
 
@@ -110,12 +131,14 @@ Keep materials light: this is a prop that other players render too.
 | Item | Count |
 |---|---|
 | Skinned meshes | 1 (784 triangles, 16 bones) |
-| Material slots | 2 |
+| Meshes | 1 (hover pad, 192 triangles) |
+| Material slots | 3 (2 placeholder, 1 hover pad) |
+| Raycasts | 2 (floor check and hover pad) |
 | PhysBones | 1 (2 transforms, no colliders), used to smooth movement |
 | Contacts | 2 (1 sender, 1 receiver), used for the world lock |
 | Constraints | 7, plus whatever your own model brings |
-| FX layers | 9 (7 tracker, 2 pose); all states have Write Defaults off |
-| Synced parameter bits | 52 |
+| FX layers | 11 (9 tracker, 2 pose); all states have Write Defaults off |
+| Synced parameter bits | 53 |
 
 ## Known limits
 
@@ -126,6 +149,7 @@ Keep materials light: this is a prop that other players render too.
 - If you scale your avatar in game, the distance scales with it. Calibrate at the avatar scale you normally use.
 - Remote players see the cat with normal network latency and smoothing. Fast movement looks smoother but slightly late.
 - Heading is blended from 22.5° steps and sent as an 8-bit float (about 1.4° per step), so facing is close but not exact.
+- **Floor check and hover pad** only see world colliders. Worlds without colliders on a surface, or with invisible ones, can put the cat on or above the wrong surface. The cat isn't pushed out of walls or furniture from the side. A surface up to 0.5 m above the tracked spot (a table edge or a low shelf) can lift the cat onto it. Height changes from one surface to the next aren't smoothed, so on steps the cat jumps up or down.
 - When the wearer looks straight up or down, the tracker can't measure "ahead", so the cat hides for that moment.
 - **Height** comes from the cameras' 3D estimate of the cat's middle, minus a typical body height (`locate.body_height_m`, 15 cm), and counts as the floor below 10 cm (`vrchat.height_snap_m`). With only one camera on the cat, it's placed on the floor. A box whose floor point lands outside the room (a cat high up near a wall, seen from across the room) is dropped, the same check that drops pictures on the wall. The height is roughly where the cameras think the cat is, and uses the same distance scale as `CatRoot` (see [Distance scale](#distance-scale-calibration)).
 
