@@ -51,6 +51,7 @@ STATE = {
     "room": None,
     "cameras": {"names": [], "stale": []},
     "problem": None,
+    "hint": None,                # a milder hint: ("gpu_busy", title, lines) while the graphics card is busy
     "capture": {"on": False, "n": 0},
     "markers": {"edge": False, "warn": False, "health": False},
     "style_version": 0,
@@ -485,7 +486,14 @@ def install_hooks():
         with LOCK:
             STATE["cameras"] = {"names": list(self.names), "stale": [int(i) for i in s]}
         return s
-    health.Health.message, health.Health.cameras = message, cameras
+    h_hint = health.Health.hint
+
+    def hint(self, now):
+        m = h_hint(self, now)
+        _set(("hint",), [m[0], m[1], list(m[2])] if m else None)
+        return m
+
+    health.Health.message, health.Health.cameras, health.Health.hint = message, cameras, hint
 
     fs_init = collect.FrameSaver.__init__
 

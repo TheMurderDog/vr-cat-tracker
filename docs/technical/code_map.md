@@ -80,6 +80,7 @@ saved anchor is always used now.
 | `cat_tracker.run` | entry: the tracker (cameras, detect, locate, anchor, overlays, alerts, capture, hard frames, OSC) |
 | `cat_tracker.settings` | loads both settings files into one config (`cfg["cat"]` holds the tracker's); `cameras.fps`: `full` (default) keeps settings/cameras.yaml's speed, the experimental `auto` asks for `AUTO_FPS` (with `Camera.open` falling back if those frames misbehave), a forced number is raised to `MIN_FPS` if lower |
 | `cat_tracker.detector` | YOLO11 on ONNX Runtime, every camera in one GPU batch |
+| `cat_tracker.gpu_stats` | graphics card memory, load, temperature and clock limits for the tracker log (NVIDIA NVML through ctypes; logged every 30 s, every 5 s while detection is slow) |
 | `cat_tracker.rate` | `DetectionRate`: the full or the idle detection rate, back to the full rate at once when unsure |
 | `cat_tracker.tripwire` | between idle looks, a cheap check of the cat's spot that runs the detector early |
 | `cat_tracker.locate` | boxes to one 3D point: triangulation or floor projection, room and height checks, weak-box matching |

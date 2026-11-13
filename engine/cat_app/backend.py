@@ -188,7 +188,7 @@ class Backend(QObject):
                 "head": {"pos": [hx, 1.6, hz], "fwd": [0.8, 0.2]},
                 "room": {"bounds": [-1.9, 1.9, -1.6, 2.1], "cameras": [[-1.75, -1.45], [1.75, -1.45], [1.75, 1.95], [-1.75, 1.95]]},
                 "cameras": {"names": ["front_left", "front_right", "back_right", "back_left"], "stale": [2] if int(t / 8) % 3 == 2 else []},
-                "problem": None, "capture": {"on": False, "n": 0}}
+                "problem": None, "hint": None, "capture": {"on": False, "n": 0}}
 
     def _interval(self):
         if not self.optimize:
@@ -438,6 +438,8 @@ class Backend(QObject):
             return "alert"
         if s.get("anchoring") or (s.get("anchor") or {}).get("off") or (s.get("vr") and not (s.get("anchor") or {}).get("have")):
             return "warn"
+        if s.get("hint"):
+            return "warn"
         return "ok"
 
     @Property(str, notify=statusChanged)
@@ -486,6 +488,8 @@ class Backend(QObject):
         if s.get("problem"):
             return " ".join(s["problem"][2])
         bits = []
+        if s.get("hint"):
+            bits.append("Graphics card busy, so tracking is slower. " + " ".join(s["hint"][2]))
         an = s.get("anchor") or {}
         if s.get("vr") and not an.get("have"):
             bits.append("No anchor yet: clear the floor, put the headset on and walk slowly around the room. "
@@ -793,6 +797,8 @@ class Backend(QObject):
             out["problem"] = "Re-anchor needed"
         elif s.get("vr") and not (s.get("anchor") or {}).get("have"):
             out["problem"] = "No anchor yet"
+        elif s.get("hint"):
+            out["problem"] = "Graphics card busy"
         return out
 
     @Slot()

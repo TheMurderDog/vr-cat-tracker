@@ -163,6 +163,11 @@ def main():
     strong = float(dc.get("score", 0.2))
     det = CatDetector({**dc, "score": min(strong, float(dc.get("weak_score", 0.08)))}, resolve_path(dc["model"]), [("CUDAExecutionProvider", {"device_id": dev}), "CPUExecutionProvider"])
     log.info("Cat model loaded: %s", dc["model"])
+    from cat_tracker.gpu_stats import GpuStats, describe as gpu_line
+    gpu = GpuStats(dev)  # memory, load and temperature in the log: what competes with detection when it slows
+    gpu_logged = 0.0
+    if gpu.lib is not None:
+        log.info("Graphics card: %s", gpu_line(gpu.read()))
 
     vr = None
     if not args.no_vr:
@@ -257,6 +262,8 @@ def main():
 
     def do_anchor(keeping=False):
         heartbeat.busy(30)  # the pose model loads before the walk's own heartbeats start
+        if vr is not None and "hint" in vr.overlays:
+            vr.place_on_head("hint", None, 0)
         T, why = anc.run(cfg, cams, rig, vr, log, show_anchor, voice_say)
         if T is not None:
             voice_say("Anchor saved. The cat's marker is lined up with your headset now.")
@@ -297,6 +304,7 @@ def main():
         vr.add_overlay("edge", resolve_path(al.get("image", "engine/cat_tracker/assets/edge_arrow.png")), al.get("width_m", 0.07))
         vr.add_overlay("warn", resolve_path(get(cfg, "cat.anchor_check.image", "engine/cat_tracker/assets/anchor_warning.png")), 0.5)
         vr.add_overlay("health", render_notice(notice_dir / "notice_health.png", "Cat tracker"), 0.5)
+        vr.add_overlay("hint", render_notice(notice_dir / "notice_hint.png", "Cat tracker"), 0.4)
         if al.get("buzz", True):
             vr.setup_haptics(resolve_path("engine/cat_tracker/input/actions.json"), log)
 
@@ -386,6 +394,38 @@ def main():
                 vr.place_on_head("health", None, 0)
         return msg
 
+    hint_on, hint_shown = None, -1e9
+
+    def show_hint(now, hidden):
+        """The milder "graphics card busy" hint: low in your view for 15 s when it starts, then again every
+        5 minutes while it lasts (it stays in the app and the wrist widget meanwhile)."""
+        nonlocal hint_on, hint_shown
+        h = health.hint(now)
+        key = h[0] if h else None
+        if key != hint_on:
+            if h:
+                log.warning("Graphics card busy: detection took %.0f ms on average over 10 s (usually ~30 ms). "
+                            "Another program may be using the card; lower its graphics settings or resolution",
+                            health.busy_ms)
+                if vr is not None:
+                    vr.set_image("hint", render_notice(notice_dir / "notice_hint_gpu.png", h[1], h[2],
+                                                       colour=(30, 150, 220)))
+                hint_shown = now
+            elif hint_on is not None:
+                log.info("Graphics card busy: cleared, detection back to normal speed")
+            hint_on = key
+        if h and now - hint_shown >= 300.0:
+            hint_shown = now
+        if vr is not None:
+            if h and not hidden and now - hint_shown < 15.0:
+                T = np.eye(4)
+                T[:3, 3] = [0.0, -0.42, -1.2]
+                T[:3, :3] = [[1, 0, 0], [0, np.cos(0.3), np.sin(0.3)], [0, -np.sin(0.3), np.cos(0.3)]]
+                vr.place_on_head("hint", T, 0.75)
+            else:
+                vr.place_on_head("hint", None, 0)
+        return h
+
     try:
         while True:
             tick = time.perf_counter()
@@ -434,6 +474,7 @@ def main():
                 for i in set(stale) | {i for i, c in enumerate(cams) if getattr(c, "state", "ok") == "unplugged"}:
                     boxes_all[i] = boxes_all[i][:0]  # an old picture (or an unplugged camera) says nothing now
                 stats["det_ms"].append(1000 * (time.perf_counter() - td))
+                health.detector_time(stats["det_ms"][-1], time.monotonic())
                 X, used, how, picked = locate(rig, [b[b[:, 4] >= strong] for b in boxes_all], lc, bounds)
                 how_strong, picked_strong = how, picked
                 ref = X if X is not None else (track.pos if track.state != "hidden" else None)
@@ -481,6 +522,8 @@ def main():
                 clean = True
                 break
             problem = show_health(time.monotonic())
+            # a real problem's notice, or the re-anchor one, takes its place
+            show_hint(time.monotonic(), hidden=bool(problem) or (check is not None and check.needs_reanchor))
             if vr is not None and cam_to_raw is not None:
                 vr.update_input()
                 M = vr.raw_to_standing()
@@ -635,6 +678,10 @@ def main():
                 log.info("%.0f detections/s, detector %.1f ms | cameras seeing it %.1f/4 | shown %.0f%% of the time | found by %s",
                          n / (now - last_log), np.mean(stats["det_ms"]), np.mean(stats["views"]), 100 * stats["seen"] / n,
                          stats["how"] or "")
+                slow = bool(stats["det_ms"]) and np.mean(stats["det_ms"]) >= 80  # usually ~30 ms
+                if gpu.lib is not None and (slow or now - gpu_logged >= 30):
+                    log.info("  graphics card: %s%s", gpu_line(gpu.read()), " (detection slow)" if slow else "")
+                    gpu_logged = now
                 if rate.switches != switches_logged:
                     log.info("  full rate: %d switches back from the idle rate (last because: %s)",
                              rate.switches - switches_logged, rate.reason)

@@ -238,6 +238,8 @@ Paths are relative to the top folder unless absolute.
 | `health` |  | tries to make a missing marker mean "no cat seen" rather than "the tracker stopped looking"; it can't guarantee that |
 | `health.camera_stale_s` | `2.0` | a camera with no new picture for this long: a notice in VR, and its old picture is ignored |
 | `health.detector_fail_s` | `3.0` | detection failing for this long: a notice in VR |
+| `health.gpu_hint` | `true` | a milder amber hint low in your view when detection has been slow for a while (another program, often a heavy game world, is using the graphics card), suggesting lower graphics settings or resolution. It shows for 15 s, then again every 5 minutes while it lasts; the app and the wrist widget show "Graphics card busy" meanwhile. It clears after 30 s back at normal speed. The first 30 s after start are skipped |
+| `health.gpu_slow_ms` | `100` | detection averaging this long (ms) over 10 s counts as slow. Usually about 30 ms on an RTX 4070 Ti SUPER; raise it on a slower card if the hint shows all the time |
 | `health.watchdog` | `true` | a small separate process (engine\cat_tracker\watchdog.py) that shows "CAT TRACKER STOPPED" in VR and buzzes the controllers if the tracker crashes, is killed or freezes |
 | `health.hang_s` | `3` | no sign of life from the tracker for this long counts as frozen. The heartbeat is written twice a second; known slow steps (the first detections, loading the pose model for the anchor check) tell the watchdog to wait longer. A notice stays up at least 4 s so it can be read. Updates slower than 1 s are logged as "Slow update" |
 | `hard_frames` |  | saves moments the model struggled with, for the next training round (see hardframes.py) |
