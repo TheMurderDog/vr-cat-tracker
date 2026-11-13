@@ -163,6 +163,11 @@ def main():
     strong = float(dc.get("score", 0.2))
     det = CatDetector({**dc, "score": min(strong, float(dc.get("weak_score", 0.08)))}, resolve_path(dc["model"]), [("CUDAExecutionProvider", {"device_id": dev}), "CPUExecutionProvider"])
     log.info("Cat model loaded: %s", dc["model"])
+    from cat_tracker.gpu_stats import GpuStats, describe as gpu_line
+    gpu = GpuStats(dev)  # memory, load and temperature in the log: what competes with detection when it slows
+    gpu_logged = 0.0
+    if gpu.lib is not None:
+        log.info("Graphics card: %s", gpu_line(gpu.read()))
 
     vr = None
     if not args.no_vr:
@@ -635,6 +640,10 @@ def main():
                 log.info("%.0f detections/s, detector %.1f ms | cameras seeing it %.1f/4 | shown %.0f%% of the time | found by %s",
                          n / (now - last_log), np.mean(stats["det_ms"]), np.mean(stats["views"]), 100 * stats["seen"] / n,
                          stats["how"] or "")
+                slow = bool(stats["det_ms"]) and np.mean(stats["det_ms"]) >= 80  # usually ~30 ms
+                if gpu.lib is not None and (slow or now - gpu_logged >= 30):
+                    log.info("  graphics card: %s%s", gpu_line(gpu.read()), " (detection slow)" if slow else "")
+                    gpu_logged = now
                 if rate.switches != switches_logged:
                     log.info("  full rate: %d switches back from the idle rate (last because: %s)",
                              rate.switches - switches_logged, rate.reason)
