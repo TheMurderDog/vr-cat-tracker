@@ -137,6 +137,9 @@ anchor_check:               # while running, every few minutes: is the saved anc
 health:                     # so that no marker only ever means "no cat", never "the tracker stopped looking"
   camera_stale_s: 2.0       # a camera with no new picture for this long: a notice in VR, and its old picture is ignored
   detector_fail_s: 3.0      # detection failing for this long: a notice in VR
+  gpu_hint: true            # a milder hint low in your view when detection slows down for a while (another program, often a
+                            # heavy game world, is using the graphics card): suggests lowering its graphics settings or resolution
+  gpu_slow_ms: 100          # detection averaging this long over 10 s counts as slow (usually ~30 ms on an RTX 4070 Ti SUPER)
   watchdog: true            # a small separate process (engine\cat_tracker\watchdog.py) that shows "CAT TRACKER STOPPED" in VR and
                             # buzzes the controllers if the tracker crashes, is killed or freezes
   hang_s: 3                 # no sign of life from the tracker for this long counts as frozen (it beats twice a second;

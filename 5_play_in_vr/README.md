@@ -62,6 +62,10 @@ You see the cat icon on your real cat in the headset.
 - **The icon sits a little off your cat:** measure from the front of your headset to the middle of your head, and
   set it in `settings\cameras.yaml` under `fusion` (right, up, back, in metres), then redo the anchor (`a`). For 8 cm
   back and 2 cm down: `headset_to_head_m: [0.0, -0.02, 0.08]`
+- **Amber "Graphics card busy" hint, or "not responding" in busy game worlds:** another program (often a heavy, crowded
+  game world, or loading one) is using the graphics card, so cat detection waits its turn and the marker lags or
+  pauses. Lower that game's graphics settings or resolution. In VRChat, showing fewer avatars or lowering the avatar
+  performance limit can help too.
 - **The PC crashes or freezes while you play:** see [If your PC crashes](#if-your-pc-crashes) just below.
 - How it all works: [docs/how_it_works.md](../docs/how_it_works.md).
 

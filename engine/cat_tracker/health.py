@@ -10,6 +10,7 @@ It can't guarantee that. Two parts:
 import json
 import os
 import time
+from collections import deque
 from pathlib import Path
 
 
@@ -22,6 +23,15 @@ class Health:
         self.stale = []
         self.det_fail_since = None
         self.det_failures = 0
+        # graphics card busy: detection much slower than usual for a while (another program, often a heavy game
+        # world, is using the card). A milder hint than the notices below: tracking still runs, only slower.
+        self.slow_ms = float(hc.get("gpu_slow_ms", 100))
+        self.gpu_hint = bool(hc.get("gpu_hint", True))
+        self.det_times = deque()     # (time, ms) of the detections in the last 10 s
+        self.first_det = None
+        self.busy_since = None
+        self.calm_since = None
+        self.busy_ms = 0.0           # mean detection time when the hint came on
 
     def cameras(self, items, now):
         """items: each camera's latest (frame, t_ns, seq) or None; now: time.monotonic().
@@ -48,6 +58,35 @@ class Health:
         self.det_failures += 1
         if self.det_fail_since is None:
             self.det_fail_since = now
+
+    def detector_time(self, ms, now):
+        """How long one detection took (ms). The hint comes on when the last 10 s average gpu_slow_ms or more,
+        and goes off after 30 s back under 60% of that. The first 30 s are skipped (the card warms up)."""
+        if self.first_det is None:
+            self.first_det = now
+        self.det_times.append((now, float(ms)))
+        while self.det_times and now - self.det_times[0][0] > 10.0:
+            self.det_times.popleft()
+        if now - self.first_det < 30.0:
+            return
+        mean = sum(m for _, m in self.det_times) / len(self.det_times)
+        if self.busy_since is None:
+            if len(self.det_times) >= 2 and mean >= self.slow_ms:
+                self.busy_since, self.calm_since, self.busy_ms = now, None, mean
+        elif mean < 0.6 * self.slow_ms:
+            self.calm_since = now if self.calm_since is None else self.calm_since
+            if now - self.calm_since >= 30.0:
+                self.busy_since = self.calm_since = None
+        else:
+            self.calm_since = None
+
+    def hint(self, now):
+        """(key, title, lines) for the mild "graphics card busy" hint, or None."""
+        if not self.gpu_hint or self.busy_since is None:
+            return None
+        return ("gpu_busy", "Graphics card busy: tracking slowed",
+                ["The cat marker may lag or pause for a moment.",
+                 "Lowering your game's graphics settings or resolution can help."])
 
     def message(self, now):
         """(key, title, lines) for the notice to show, or None when everything is fine."""
