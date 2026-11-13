@@ -12,6 +12,7 @@ away and the desktop window carries on (started in the background, the app close
 import ctypes
 import hashlib
 import time
+import traceback
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPoint, QPointF, Qt, QTimer, QUrl
@@ -25,6 +26,50 @@ W, H = 1280, 800
 TMP = resolve_path("my_data/app/vr_tab")
 APP_KEY = "camera_core.cat_tracker_app"  # the app's SteamVR app key (cat_tracker.install_autostart registers it)
 KEY = APP_KEY + ".tab"                  # the dashboard tab's overlay key
+
+
+def describe(e):
+    """One line about an error. pyopenvr's errors have no message, only a class name (OverlayError_InvalidHandle
+    and the like), so this names the class, the code and where it came from."""
+    text = f"{type(e).__name__}"
+    if getattr(e, "error_value", None) is not None:
+        text += f" ({int(e.error_value)})"
+    if str(e):
+        text += f": {e}"
+    tb = traceback.extract_tb(e.__traceback__)
+    if tb:
+        text += f", in {Path(tb[-1].filename).name} line {tb[-1].lineno} ({tb[-1].name})"
+    return text
+
+
+class Repeats:
+    """Logs a problem that comes back every update once, with its traceback, then a count at most once a
+    minute while it continues, and a line when it stops."""
+
+    def __init__(self, log, what, every_s=60.0):
+        self.log, self.what, self.every_s = log, what, every_s
+        self.key = None
+        self.count = 0
+        self.since = 0.0
+
+    def failed(self, e):
+        key, now = describe(e), time.monotonic()
+        if key != self.key:
+            self.ok()
+            self.key, self.count, self.since = key, 0, now
+            self.log(f"{self.what}: {key}\n" + "".join(traceback.format_exception(e)).rstrip())
+            return
+        self.count += 1
+        if now - self.since >= self.every_s:
+            self.log(f"{self.what}: {key} (again {self.count} times in the last {now - self.since:.0f} s)")
+            self.count, self.since = 0, now
+
+    def ok(self):
+        if self.key is not None:
+            if self.count:
+                self.log(f"{self.what}: {self.key} (again {self.count} times)")
+            self.log(f"{self.what}: working again")
+            self.key, self.count = None, 0
 
 
 class PictureFile:
@@ -169,6 +214,8 @@ class VrDashboard(QObject):
         self.pump = QTimer(self, interval=11, timeout=self.tick)
         self.no_openvr = False
         self.wrist = None
+        self.tab_errors = Repeats(log, "Couldn't update the SteamVR tab")
+        self.wrist_errors = Repeats(log, "Wrist widget problem")
         if backend is not None:
             backend.settingsChanged.connect(self._settings_changed)
         self.try_connect()
@@ -217,7 +264,7 @@ class VrDashboard(QObject):
             self.log("Connected to SteamVR: the Cat Tracker tab is in the dashboard")
             self._settings_changed()
         except Exception as e:  # noqa: BLE001
-            self.log(f"Couldn't add the SteamVR dashboard tab: {e}")
+            self.log(f"Couldn't add the SteamVR dashboard tab: {describe(e)}")
             self.disconnect()
 
     def _settings_changed(self):
@@ -237,7 +284,7 @@ class VrDashboard(QObject):
                 self.wrist = WristWidget(self, self.openvr, self.vr, self.ov, self.engine, self.backend, self.log)
                 self.log("Wrist widget on")
             except Exception as e:  # noqa: BLE001
-                self.log(f"Couldn't make the wrist widget: {e}")
+                self.log(f"Couldn't make the wrist widget: {describe(e)}")
                 self.wrist = None
         elif not on and self.wrist is not None:
             self.wrist.close()
@@ -316,7 +363,7 @@ class VrDashboard(QObject):
                 self.last_frame = time.monotonic()
                 return True
             except Exception as e:  # noqa: BLE001
-                self.log(f"Direct3D 11 texture didn't work ({e}); using a picture file instead")
+                self.log(f"Direct3D 11 texture didn't work ({describe(e)}); using a picture file instead")
                 self.mode = "file"
                 self._close_d3d()
         if time.monotonic() - self.last_frame < 0.25:
@@ -365,7 +412,7 @@ class VrDashboard(QObject):
                 elif t in (openvr.VREvent_FocusLeave, openvr.VREvent_OverlayFocusChanged):
                     self.panel.leave()
         except Exception as e:  # noqa: BLE001
-            self.log(f"Lost SteamVR ({e}); trying to reconnect")
+            self.log(f"Lost SteamVR ({describe(e)}); trying to reconnect")
             self.disconnect()
             return
         # draw only while the tab is open, at most 20 times a second, and only when something changed
@@ -383,16 +430,18 @@ class VrDashboard(QObject):
                 if self._upload() and self.backend is not None:
                     self.backend.meter.count("vr tab frames")
                     self.backend.meter.timed("vr tab frame", time.perf_counter() - t0)
+                self.tab_errors.ok()
             except Exception as e:  # noqa: BLE001
-                self.log(f"Couldn't update the SteamVR tab: {e}")
+                self.tab_errors.failed(e)
         if self.wrist is not None:
             try:
                 t0 = time.perf_counter()
                 self.wrist.tick(now)
                 if self.backend is not None:
                     self.backend.meter.timed("wrist widget tick", time.perf_counter() - t0)
+                self.wrist_errors.ok()
             except Exception as e:  # noqa: BLE001
-                self.log(f"Wrist widget problem: {e}")
+                self.wrist_errors.failed(e)
         self._set_visible(vis)
 
     def _set_visible(self, vis):

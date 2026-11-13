@@ -20,7 +20,7 @@ import numpy as np
 
 from core.config import resolve_path
 
-from cat_app.vr_dashboard import APP_KEY, PictureFile
+from cat_app.vr_dashboard import APP_KEY, PictureFile, describe
 
 KEY = APP_KEY + ".wrist"
 SIZE = (640, 320)
@@ -142,7 +142,7 @@ class WristWidget:
         except _Done:
             pass
         except Exception as e:  # noqa: BLE001
-            self.log(f"Wrist widget: couldn't register the app with SteamVR ({e}); grabbing may not work")
+            self.log(f"Wrist widget: couldn't register the app with SteamVR ({describe(e)}); grabbing may not work")
         try:
             inp = o.VRInput()
             inp.setActionManifestPath(str(HERE / "input" / "actions.json"))
@@ -155,7 +155,7 @@ class WristWidget:
             self.input = inp
         except Exception as e:  # noqa: BLE001
             self.input = None
-            self.log(f"Wrist widget: no controller input ({e}); it shows, but can't be grabbed")
+            self.log(f"Wrist widget: no controller input ({describe(e)}); it shows, but can't be grabbed")
 
     def _buttons(self):
         """[(grab held, grab just pressed, grab just released, stick y) for left, right]."""
@@ -364,7 +364,7 @@ class WristWidget:
                 self.ov.setOverlayTexture(self.handle, tex)
                 return
             except Exception as e:  # noqa: BLE001
-                self.log(f"Wrist widget: Direct3D 11 texture didn't work ({e}); using a picture file")
+                self.log(f"Wrist widget: Direct3D 11 texture didn't work ({describe(e)}); using a picture file")
                 self.mode = "file"
                 self._close_d3d()
         self.picture.send(self.ov, self.handle, img)
