@@ -40,7 +40,7 @@ from cat_tracker.notice import render as render_notice
 from cat_tracker.locate import CatTrack, locate, room_bounds, weak_matches
 from cat_tracker.osc import OscCat, OscStream
 from cat_tracker.stick_anchor import StickAnchor
-from cat_tracker.vrlink import billboard, edge_pose, flat
+from cat_tracker.vrlink import billboard, edge_pose, flat, head_direction
 from core.config import get, resolve_path
 from core.runlog import start_run
 from fusion.triangulate import Rig
@@ -512,9 +512,11 @@ def main():
                     vr.set_image("icon", icons.get({"close": "icon_close", "rest": "icon_rest", "move": "icon_move"}.get(kind, "icon"), icons["icon"]))
                     vr.place("icon", billboard(p + np.array([0, float(oc.get("icon_lift_m", 0.3)), 0]), hmd_st), alpha)
                     vr.place("ring", flat(ring), alpha)
-                    if close:  # its direction as seen from the headset, so the arrow points at it
-                        d = np.linalg.inv(M @ hmd) @ np.append(p, 1.0)
-                        vr.place_on_head("edge", edge_pose(d[:3], float(al.get("edge_angle_deg", 32)),
+                    # its direction as seen from the headset, so the arrow points at it. None while the headset
+                    # isn't tracking (taken off, asleep): close can still come from a foot tracker then
+                    d = head_direction(M, hmd, p) if close else None
+                    if d is not None:
+                        vr.place_on_head("edge", edge_pose(d, float(al.get("edge_angle_deg", 32)),
                                                            float(al.get("distance_m", 1.0))), float(al.get("alpha", 0.9)))
                     else:
                         vr.place_on_head("edge", None, 0)
@@ -667,6 +669,9 @@ def main():
                 time.sleep(spare)
     except KeyboardInterrupt:  # Ctrl+C in the console counts as closing it on purpose
         clean = True
+    except Exception:  # in this log too, not only on the console (the app's console may be closed or hidden)
+        log.exception("The tracker stopped because of an error")
+        raise
     finally:
         if clean:
             heartbeat.stopped()  # the watchdog closes quietly; without this it warns you in VR
