@@ -283,5 +283,13 @@ def edge_pose(d_head, angle_deg, distance_m):
     return T
 
 
+def head_direction(raw_to_standing, hmd_raw, p_standing):
+    """Where a standing-space point is as seen from the headset (its frame: +x right, +y up, -z ahead), or None
+    while the headset isn't tracking (taken off, asleep, out of view of the base stations)."""
+    if hmd_raw is None:
+        return None
+    return (np.linalg.inv(raw_to_standing @ hmd_raw) @ np.append(p_standing, 1.0))[:3]
+
+
 def horizontal_distance(a, b):
     return math.hypot(a[0] - b[0], a[2] - b[2])
