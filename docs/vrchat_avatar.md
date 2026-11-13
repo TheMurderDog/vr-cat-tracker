@@ -114,7 +114,7 @@ Keep materials light: this is a prop that other players render too.
 | PhysBones | 1 (2 transforms, no colliders), used to smooth movement |
 | Contacts | 2 (1 sender, 1 receiver), used for the world lock |
 | Constraints | 7, plus whatever your own model brings |
-| FX layers | 10 (8 tracker, 2 pose); all states have Write Defaults off |
+| FX layers | 9 (7 tracker, 2 pose); all states have Write Defaults off |
 | Synced parameter bits | 52 |
 
 ## Known limits
